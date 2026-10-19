@@ -83,7 +83,7 @@ frontend/src/
 ## Backend Architecture
 
 ### Technology Stack (Phase 2+)
-- **Java 17+** with Spring Boot 3.x
+- **Java 25 LTS+** with Spring Boot 3.x
 - **Spring Security** - Authentication and authorization
 - **Spring Data JPA** - Data access
 - **PostgreSQL 14+** - Relational database

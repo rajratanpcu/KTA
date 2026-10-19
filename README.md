@@ -11,7 +11,7 @@
 A production-grade ERP system built for multi-godown wholesale and retail distribution enterprises, supporting real-time inventory balances, stock movements, transporter billing, and OCR-assisted bill processing.
 
 ## Live Deployment Links (1-Click)
-- **Render Backend + Managed PostgreSQL:** Click the **Deploy to Render** button above. It uses `render.yaml` to automatically provision a free PostgreSQL 15 database, wire the database credentials directly to the Spring Boot 3 API container, run all Flyway migrations (V1, V2, V3), and spin up the live backend with zero manual configuration.
+- **Render Backend + Managed PostgreSQL:** Click the **Deploy to Render** button above. It uses `render.yaml` to provision the managed PostgreSQL service, wire database credentials to the Spring Boot API container, run all Flyway migrations, and start the backend. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `CORS_ALLOWED_ORIGINS` as provider secrets before shared use.
 - **Vercel Frontend:** Click the **Deploy with Vercel** button above. It automatically clones the frontend, configures the Vite build, SPA routing, and security headers. Set `VITE_API_BASE_URL` to your Render backend URL.
 
 ---
@@ -50,3 +50,4 @@ git push -u origin main
 - [Environment Variables Reference](docs/ENVIRONMENT_VARIABLES.md)
 - [Database Backup & Recovery Runbook](docs/BACKUP_AND_RECOVERY.md)
 - [Transport Bills Module Specification](docs/TRANSPORT_BILLS_MODULE.md)
+- [Final Production & Deployment Status](docs/FINAL_DEPLOYMENT_REPORT.md)

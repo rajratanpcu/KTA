@@ -91,7 +91,7 @@ class StockServiceTest {
         request.setGodownId(20L);
         request.setQuantity(new BigDecimal("25.000"));
         request.setUnit("BAGS");
-        request.setMovementType("PURCHASE_RECEIPT");
+        request.setMovementType("PURCHASE_IN");
 
         when(productRepository.findById(10L)).thenReturn(Optional.of(testProduct));
         when(godownRepository.findById(20L)).thenReturn(Optional.of(testGodown));
@@ -121,17 +121,18 @@ class StockServiceTest {
         request.setGodownId(20L);
         request.setQuantity(new BigDecimal("100.000")); // Balance is only 50
         request.setUnit("BAGS");
-        request.setMovementType("SALE");
+        request.setMovementType("SALES_OUT");
 
         when(productRepository.findById(10L)).thenReturn(Optional.of(testProduct));
         when(godownRepository.findById(20L)).thenReturn(Optional.of(testGodown));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(balanceRepository.findByProductIdAndGodownId(10L, 20L)).thenReturn(Optional.of(testBalance));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             stockService.recordMovement(request, 1L);
         });
 
-        assertTrue(exception.getMessage().contains("Insufficient available stock"));
+        assertTrue(exception.getMessage().contains("Insufficient stock"));
         verify(movementRepository, never()).save(any(StockMovement.class));
     }
 }

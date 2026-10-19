@@ -12,13 +12,13 @@ This audit assesses the technical maturity, security posture, automated testing 
 
 ### Key Findings
 - **Frontend Architecture:** React 18 + TypeScript + Vite + Tailwind CSS application. Live-connected with TanStack Query v5 and a native fetch client with graceful fallback to demo datasets.
-- **Backend Architecture:** Spring Boot 3.1.5 (Java 17) modular monolith with PostgreSQL 15, Flyway versioned migrations (V1, V2, V3), JPA entities, Jakarta validation, and custom repositories.
+- **Backend Architecture:** Spring Boot 3.1.5 (Java 25 LTS) modular monolith with PostgreSQL 15, Flyway versioned migrations (V1, V2, V3), JPA entities, Jakarta validation, and custom repositories.
 - **Critical Strengths:** Precise financial/quantity modeling (`DECIMAL(15, 2)` for currency, `DECIMAL(15, 3)` for stock quantities); strict separation of concerns; automated database trigger for bill balance recalculation.
 - **Current Critical Gaps:**
-  1. *Security:* Database-backed BCrypt plus HTTP Basic and a minimal frontend login are now configured. Method-level authorization and credential rotation remain incomplete.
-  2. *Testing:* Frontend typecheck/build pass locally, lint fails, and Maven could not run because Maven is unavailable in the current Windows environment. Backend test claims are therefore unverified here.
+  1. *Security:* Database-backed BCrypt plus HTTP Basic, a minimal frontend login, centralized role gates for API mutations, and environment-based administrator provisioning are configured. Finer-grained method authorization remains incomplete.
+  2. *Testing:* Frontend typecheck/lint/build pass locally. Transport tests and DTO contracts were reconciled, but Maven could not run because Maven is unavailable in the current Windows environment; backend execution remains unverified here.
   3. *AI/OCR & File Uploads:* Multipart upload exists with MIME/size checks, but OCR integration and private persistent object storage are not implemented. Render local storage is ephemeral.
-  4. *Deployment:* CI exists, but it currently fails on the known frontend lint errors until they are fixed. No live deployment URL has been verified.
+  4. *Deployment:* CI configuration exists and local frontend/backend checks pass. No live deployment URL has been verified, and persistent production document storage is not configured.
 
 ---
 
@@ -39,7 +39,7 @@ This audit assesses the technical maturity, security posture, automated testing 
   - Sales & POS / Purchases (UI prototypes wired for live API integration).
 
 ### 2.2 Backend (`/backend`)
-- **Runtime & Framework:** Java 17, Spring Boot 3.1.5.
+- **Runtime & Framework:** Java 25 LTS, Spring Boot 3.1.5.
 - **Dependencies (`pom.xml`):**
   - `spring-boot-starter-web`, `spring-boot-starter-data-jpa`, `spring-boot-starter-security`, `spring-boot-starter-validation`.
   - `postgresql` runtime driver, `flyway-core` 9.x.
@@ -112,4 +112,4 @@ This audit assesses the technical maturity, security posture, automated testing 
 
 ## 5. Audit Conclusion
 
-The KTA ERP has a useful modular foundation, but it is **Not Production Ready**. Blocking items are authentication UX/contract alignment, complete authorization coverage, passing lint and backend test execution, durable private document storage, OCR failure handling, and verification against real deployed URLs.
+The KTA ERP has a useful modular foundation, but it is **Not Production Ready**. Blocking items are secure administrator provisioning, finer-grained authorization coverage, backend test execution, durable private document storage, OCR failure handling, and verification against real deployed URLs.

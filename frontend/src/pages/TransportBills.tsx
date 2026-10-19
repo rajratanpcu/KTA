@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import {
   FileText,
   Upload,
@@ -29,24 +29,98 @@ import {
   demoTransportBills,
   demoTransporters,
   demoTransportPayments,
-  calculateBillSummary
 } from '@/data/transportData'
 import type { TransportBill } from '@/types/transport'
+import { useCreateTransportBill, useCreateTransportPayment, useTransportBills, useTransporters, useTransportPayments, useUploadTransportDocument } from '@/hooks/use-transport-queries'
+import type { TransportBillResponse, TransportPaymentResponse, TransporterResponse } from '@/services/transport-api'
+import type { TransportPayment, Transporter } from '@/types/transport'
+
+function toTransportBill(response: TransportBillResponse): TransportBill {
+  return {
+    ...response,
+    id: String(response.id),
+    transporterId: String(response.transporterId),
+    status: response.status as TransportBill['status'],
+    createdBy: String(response.createdById),
+    items: response.items.map((item) => ({
+      ...item,
+      id: String(item.id),
+      productId: item.productId == null ? undefined : String(item.productId),
+    })),
+  }
+}
+
+function toTransportPayment(response: TransportPaymentResponse): TransportPayment {
+  return {
+    ...response,
+    id: String(response.id),
+    transporterId: String(response.transporterId),
+    createdBy: String(response.createdById),
+    paymentMethod: response.paymentMethod as TransportPayment['paymentMethod'],
+    allocations: response.allocations.map((allocation) => ({
+      ...allocation,
+      id: String(allocation.id),
+      paymentId: String(allocation.paymentId),
+      billId: String(allocation.billId),
+    })),
+  }
+}
 
 export default function TransportBills() {
+  const transportBillsQuery = useTransportBills()
+  const transportersQuery = useTransporters()
+  const transportPaymentsQuery = useTransportPayments()
+  const uploadDocumentMutation = useUploadTransportDocument()
+  const createBillMutation = useCreateTransportBill()
+  const createPaymentMutation = useCreateTransportPayment()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [transporterFilter, setTransporterFilter] = useState('all')
   const [isScanOpen, setIsScanOpen] = useState(false)
   const [isReviewOpen, setIsReviewOpen] = useState(false)
-  const [, setSelectedBill] = useState<TransportBill | null>(null)
+  const [selectedBill, setSelectedBill] = useState<TransportBill | null>(null)
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
   const [viewMode, setViewMode] = useState<'bills' | 'transporters' | 'payments'>('bills')
   const [, setSelectedFile] = useState<File | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
+  const [uploadedDocumentId, setUploadedDocumentId] = useState<number | null>(null)
+  const [billError, setBillError] = useState('')
 
-  const summary = calculateBillSummary()
+  const bills = transportBillsQuery.isError
+    ? demoTransportBills
+    : (transportBillsQuery.data ?? []).map(toTransportBill)
+  const summary = bills.reduce(
+    (result, bill) => {
+      result.total += 1
+      result.totalAmount += bill.totalAmount
+      result.totalPaid += bill.amountPaid
+      result.outstanding += bill.balanceDue
+      if (bill.status === 'PENDING') result.unpaid += 1
+      if (bill.status === 'PARTIALLY_PAID') result.partiallyPaid += 1
+      if (bill.status === 'PAID') result.paid += 1
+      return result
+    },
+    { total: 0, totalAmount: 0, totalPaid: 0, outstanding: 0, unpaid: 0, partiallyPaid: 0, paid: 0 },
+  )
+  const transporters: Transporter[] = transportersQuery.isError
+    ? demoTransporters
+    : (transportersQuery.data ?? []).map((transporter: TransporterResponse) => {
+      const transporterBills = bills.filter((bill) => bill.transporterId === String(transporter.id))
+      return {
+        ...transporter,
+        id: String(transporter.id),
+        totalBills: transporterBills.length,
+        totalAmount: transporterBills.reduce((total, bill) => total + bill.totalAmount, 0),
+        totalPaid: transporterBills.reduce((total, bill) => total + bill.amountPaid, 0),
+        outstandingBalance: transporterBills.reduce((total, bill) => total + bill.balanceDue, 0),
+      }
+    })
+  const payments: TransportPayment[] = transportPaymentsQuery.isError
+    ? demoTransportPayments
+    : (transportPaymentsQuery.data ?? []).map(toTransportPayment)
 
-  const filteredBills = demoTransportBills.filter((bill) => {
+  const filteredBills = bills.filter((bill) => {
     const matchesSearch =
       bill.billNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bill.transporterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,22 +141,78 @@ export default function TransportBills() {
     }
   }
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setSelectedFile(file)
-      // Simulate OCR extraction
       setIsExtracting(true)
-      setTimeout(() => {
+      try {
+        const uploadedDocument = await uploadDocumentMutation.mutateAsync(file)
+        setUploadedDocumentId(uploadedDocument.documentId)
+        setBillError('')
+      } finally {
         setIsExtracting(false)
         setIsScanOpen(false)
         setIsReviewOpen(true)
-      }, 2000)
+      }
+    }
+  }
+
+  const handleBillReviewSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    try {
+      await createBillMutation.mutateAsync({
+        billNumber: String(formData.get('billNumber')),
+        billDate: String(formData.get('billDate')),
+        transporterId: Number(formData.get('transporterId')),
+        freightCharges: Number(formData.get('freightCharges')),
+        loadingCharges: Number(formData.get('loadingCharges') || 0),
+        unloadingCharges: Number(formData.get('unloadingCharges') || 0),
+        otherCharges: Number(formData.get('otherCharges') || 0),
+        gstAmount: Number(formData.get('gstAmount') || 0),
+        status: 'DRAFT',
+        scannedDocumentId: uploadedDocumentId ?? undefined,
+        needsReview: true,
+      })
+      setIsReviewOpen(false)
+      setUploadedDocumentId(null)
+    } catch (error) {
+      setBillError(error instanceof Error ? error.message : 'Unable to save the transport bill.')
     }
   }
 
   const handleRecordPayment = (bill: TransportBill) => {
     setSelectedBill(bill)
+    setPaymentError('')
+    setIsPaymentOpen(true)
+  }
+
+  const handlePaymentSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedBill) return
+    const formData = new FormData(event.currentTarget)
+    const amount = Number(formData.get('amount'))
+    if (!Number.isFinite(amount) || amount <= 0 || amount > selectedBill.balanceDue) {
+      setPaymentError('Enter a payment amount greater than zero and no more than the outstanding balance.')
+      return
+    }
+
+    try {
+      await createPaymentMutation.mutateAsync({
+        paymentNumber: String(formData.get('paymentNumber')),
+        paymentDate: String(formData.get('paymentDate')),
+        transporterId: Number(selectedBill.transporterId),
+        amount,
+        paymentMethod: String(formData.get('paymentMethod')),
+        transactionReference: String(formData.get('transactionReference') || '') || undefined,
+        allocations: [{ billId: Number(selectedBill.id), allocatedAmount: amount }],
+      })
+      setIsPaymentOpen(false)
+      setSelectedBill(null)
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : 'Unable to record payment.')
+    }
   }
 
   return (
@@ -207,7 +337,7 @@ export default function TransportBills() {
                 </Select>
                 <Select value={transporterFilter} onChange={(e) => setTransporterFilter(e.target.value)}>
                   <option value="all">All Transporters</option>
-                  {demoTransporters.map(t => (
+                  {transporters.map(t => (
                     <option key={t.id} value={t.id}>{t.companyName}</option>
                   ))}
                 </Select>
@@ -303,7 +433,7 @@ export default function TransportBills() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {demoTransporters.map((transporter) => (
+              {transporters.map((transporter) => (
                 <div key={transporter.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -380,7 +510,7 @@ export default function TransportBills() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {demoTransportPayments.map((payment) => (
+                {payments.map((payment) => (
                   <TableRow key={payment.id}>
                     <TableCell className="font-mono">{payment.paymentNumber}</TableCell>
                     <TableCell className="text-sm">
@@ -461,7 +591,7 @@ export default function TransportBills() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <h3 className="font-semibold mb-2">Extracting Bill Information...</h3>
                 <p className="text-sm text-muted-foreground">
-                  Using AI to read transporter details, items, and charges
+                  OCR is pending. Review the uploaded document and enter values manually if extraction is unavailable.
                 </p>
               </div>
             )}
@@ -469,21 +599,71 @@ export default function TransportBills() {
         </DialogContent>
       </Dialog>
 
-      {/* Review Extracted Data Dialog - Next message will continue */}
+      {/* Manual review dialog: OCR is intentionally not treated as verified data. */}
       <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Review Extracted Bill Data</DialogTitle>
             <DialogClose onClick={() => setIsReviewOpen(false)} />
           </DialogHeader>
-          <div className="space-y-4">
-            {/* Continued in next part */}
-          </div>
+          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleBillReviewSubmit}>
+            <Input name="billNumber" placeholder="Bill or invoice number" required />
+            <Input name="billDate" type="date" required />
+            <Select name="transporterId" required defaultValue="">
+              <option value="" disabled>Select transporter</option>
+              {transporters.map((transporter) => (
+                <option key={transporter.id} value={transporter.id}>{transporter.companyName}</option>
+              ))}
+            </Select>
+            <Input name="freightCharges" type="number" min="0" step="0.01" placeholder="Freight charges" required />
+            <Input name="loadingCharges" type="number" min="0" step="0.01" placeholder="Loading charges" />
+            <Input name="unloadingCharges" type="number" min="0" step="0.01" placeholder="Unloading charges" />
+            <Input name="otherCharges" type="number" min="0" step="0.01" placeholder="Other charges" />
+            <Input name="gstAmount" type="number" min="0" step="0.01" placeholder="GST amount" />
+            <div className="md:col-span-2 space-y-3">
+              <p className="text-sm text-muted-foreground">OCR is not configured. Review these values manually before saving the draft.</p>
+              {billError && <p className="text-sm text-destructive" role="alert">{billError}</p>}
+              <Button type="submit" disabled={createBillMutation.isPending}>
+                {createBillMutation.isPending ? 'Saving draft...' : 'Save reviewed draft'}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
-      {/* View Bill Dialog - Will be added */}
-      {/* Record Payment Dialog - Will be added */}
+      <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record payment for {selectedBill?.billNumber}</DialogTitle>
+            <DialogClose onClick={() => setIsPaymentOpen(false)} />
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={handlePaymentSubmit}>
+            <Input name="paymentNumber" placeholder="Payment number" required />
+            <Input name="paymentDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+            <Input
+              name="amount"
+              type="number"
+              min="0.01"
+              max={selectedBill?.balanceDue}
+              step="0.01"
+              placeholder={`Outstanding: ${selectedBill?.balanceDue ?? 0}`}
+              required
+            />
+            <Select name="paymentMethod" defaultValue="BANK_TRANSFER">
+              <option value="BANK_TRANSFER">Bank transfer</option>
+              <option value="UPI">UPI</option>
+              <option value="CASH">Cash</option>
+              <option value="CHEQUE">Cheque</option>
+              <option value="OTHER">Other</option>
+            </Select>
+            <Input name="transactionReference" placeholder="Transaction reference (optional)" />
+            {paymentError && <p className="text-sm text-destructive" role="alert">{paymentError}</p>}
+            <Button type="submit" disabled={createPaymentMutation.isPending}>
+              {createPaymentMutation.isPending ? 'Saving...' : 'Save payment'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

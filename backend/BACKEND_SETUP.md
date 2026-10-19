@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Java 17 or higher
+- Java 25 LTS or higher
 - Maven 3.6+
 - PostgreSQL 15+
 - Docker & Docker Compose (optional, for containerized setup)

@@ -114,11 +114,10 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        {/* Prototype Notice */}
+        {/* Data status notice */}
         <div className="bg-yellow-50 border-t border-yellow-200 px-6 py-2">
           <p className="text-xs text-yellow-800">
-            <strong>UI Prototype:</strong> This interface uses simulated demo data.
-            No real transactions are processed.
+            Dashboard, sales, purchasing, expenses, and reports still use demo data. Transport bills, payments, and document uploads use the backend when authenticated.
           </p>
         </div>
       </div>

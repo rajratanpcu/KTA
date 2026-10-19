@@ -238,7 +238,7 @@ Complete API endpoints:
 
 ### Backend
 - Spring Boot 3.1.5
-- Java 17
+- Java 25 LTS
 - PostgreSQL 15
 - Spring Data JPA
 - Spring Security

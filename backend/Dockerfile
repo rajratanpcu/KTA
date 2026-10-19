@@ -14,6 +14,8 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache curl
+
 # Copy the JAR file from build stage
 COPY --from=build /app/target/kta-erp-1.0.0.jar app.jar
 

@@ -46,7 +46,7 @@
 6. Render will build the Docker container and start Spring Boot.
 7. **Verification:** Test health check by visiting `https://kta-erp-backend.onrender.com/actuator/health`. Expected response: `{"status":"UP"}`.
 
-The seeded `admin` account is a development bootstrap credential. Rotate its BCrypt password directly in the approved database before any shared deployment; do not configure administrator passwords through Spring's default-user properties.
+Migration V6 disables the known development bootstrap account. Configure `ADMIN_USERNAME` and `ADMIN_PASSWORD` as provider secrets so the application provisions a BCrypt administrator at startup; the password must be at least 12 characters. Never put these values in Git or frontend variables.
 
 *Operational Note on Render Free Tier:* Free services spin down after 15 minutes of inactivity. When a new request arrives, it takes 30–50 seconds to cold-start. This is normal on the free tier.
 

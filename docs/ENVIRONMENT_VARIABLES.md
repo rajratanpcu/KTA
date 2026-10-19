@@ -18,6 +18,10 @@ This document lists every environment variable consumed by the KTA ERP backend a
 | `DB_MIN_IDLE` | No | `2` | `2` | Minimum idle connections kept warm. |
 | `PORT` | No | `8080` | `8080` (auto-assigned by Render) | Listening HTTP port for backend service. |
 | `CORS_ALLOWED_ORIGINS` | **Yes** | `http://localhost:5173,http://localhost:3000` | `https://kta-erp.vercel.app` | Comma-separated list of browser origins permitted to issue cross-origin API calls. |
+| `ADMIN_USERNAME` | **Yes for provisioning** | *(no default)* | Provider secret | Administrator username provisioned at startup. |
+| `ADMIN_PASSWORD` | **Yes for provisioning** | *(no default)* | Provider secret | Administrator password; must be at least 12 characters and is BCrypt-hashed server-side. |
+| `ADMIN_FULL_NAME` | No | `KTA Administrator` | Provider variable | Display name for the provisioned administrator. |
+| `ADMIN_EMAIL` | No | `<username>@kta.local` | Provider variable | Email for the provisioned administrator. |
 | `UPLOAD_DIR` | No | `/tmp/kta-uploads` | Persistent mounted volume or object storage integration | Filesystem path where scanned bill PDFs and images are temporarily persisted. Render's local filesystem is ephemeral. |
 
 ---

@@ -177,6 +177,14 @@ export interface TransportPaymentRequest {
   allocations?: PaymentAllocationRequest[];
 }
 
+export interface DocumentUploadResponse {
+  documentId: number;
+  originalFilename: string;
+  fileUrl: string;
+  fileSize: number;
+  message: string;
+}
+
 // ===== Transporter API =====
 
 export const transporterApi = {
@@ -258,4 +266,13 @@ export const transportPaymentApi = {
 
   delete: (id: number) =>
     apiClient.delete(`/transport/payments/${id}`).then((r) => r.data),
+};
+
+export const transportDocumentApi = {
+  upload: (file: File, documentType = 'TRANSPORT_BILL') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('documentType', documentType);
+    return apiClient.post<DocumentUploadResponse>('/transport/documents/upload', formData).then((r) => r.data);
+  },
 };

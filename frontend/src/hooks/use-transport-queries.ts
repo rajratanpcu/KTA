@@ -3,6 +3,7 @@ import {
   transporterApi,
   transportBillApi,
   transportPaymentApi,
+  transportDocumentApi,
 } from '../services/transport-api';
 import type {
   TransporterRequest,
@@ -197,5 +198,11 @@ export function useDeleteTransportPayment() {
       queryClient.invalidateQueries({ queryKey: ['transport-payments'] });
       queryClient.invalidateQueries({ queryKey: ['transport-bills'] });
     },
+  });
+}
+
+export function useUploadTransportDocument() {
+  return useMutation({
+    mutationFn: (file: File) => transportDocumentApi.upload(file),
   });
 }

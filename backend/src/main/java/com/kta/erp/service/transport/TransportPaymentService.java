@@ -59,6 +59,10 @@ public class TransportPaymentService {
             throw new RuntimeException("Payment already exists with number: " + request.getPaymentNumber());
         }
 
+        if (request.getAllocations() == null) {
+            throw new RuntimeException("Allocations must not be null");
+        }
+
         // Validate allocations
         BigDecimal totalAllocated = request.getAllocations().stream()
                 .map(PaymentAllocationRequest::getAllocatedAmount)
@@ -66,6 +70,19 @@ public class TransportPaymentService {
 
         if (totalAllocated.compareTo(request.getAmount()) > 0) {
             throw new RuntimeException("Total allocated amount cannot exceed payment amount");
+        }
+
+        for (PaymentAllocationRequest allocationRequest : request.getAllocations()) {
+            TransportBill bill = billRepository.findById(allocationRequest.getBillId())
+                    .orElseThrow(() -> new RuntimeException("Bill not found with id: " + allocationRequest.getBillId()));
+            if (bill.getTransporter() == null
+                    || !bill.getTransporter().getId().equals(request.getTransporterId())) {
+                throw new RuntimeException("Payment allocation belongs to a different transporter");
+            }
+            if (bill.getBalanceDue() != null
+                    && allocationRequest.getAllocatedAmount().compareTo(bill.getBalanceDue()) > 0) {
+                throw new RuntimeException("Allocation exceeds the bill balance due");
+            }
         }
 
         TransportPayment payment = new TransportPayment();

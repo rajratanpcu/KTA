@@ -2,7 +2,7 @@
 **Document Version:** 1.0.0  
 **Execution Date:** October 2026  
 **Test Suite:** Unit, Service Mockito, Static Typecheck, Production Build  
-**Status:** BLOCKED — frontend checks pass; backend Maven execution is blocked locally
+**Status:** PASSING LOCALLY — frontend and backend checks pass; live deployment remains unverified
 
 > Corrected on 2026-10-19. This report counts only commands executed in the current workspace; earlier unverified pass claims are not treated as evidence.
 
@@ -16,8 +16,9 @@
 | **Frontend ESLint** | `npm run lint` | Full codebase | PASS | 0 | 0 | **PASSED** |
 | **Frontend Production Build** | `npm run build` | Vite production bundle | PASS | 0 | 0 | **PASSED (large chunk warning)** |
 | **Frontend automated tests** | `npm test -- --run` | No `test` script exists | 0 | 0 | BLOCKED | **NOT CONFIGURED** |
-| **Backend Maven tests** | `mvn test` | Full backend suite | NOT RUN | Maven unavailable | 0 | **BLOCKED** |
-| **Backend Maven package** | `mvn package -DskipTests` | Backend artifact | NOT RUN | Maven unavailable | 0 | **BLOCKED** |
+| **Backend Maven tests** | Docker Java 17 / `mvn clean package` | 7 tests | 7 | 0 | 0 | **PASSED** |
+| **Backend Maven package** | Docker Java 17 / `mvn clean package` | Backend artifact | PASS | 0 | 0 | **PASSED** |
+| **Local backend smoke checks** | PowerShell HTTP probes | Health, auth barrier, core APIs | 6 | 0 | 0 | **PASSED** |
 
 ---
 
@@ -32,8 +33,9 @@
   - Strict type alignment across queries (`use-core-queries.ts`, `use-stock-queries.ts`, `use-transport-queries.ts`).
 
 ### 2.2 Backend Test Execution
-- **Command attempted:** `cd backend; mvn test`
-- **Result:** Blocked because `mvn` is not installed or available on PATH. Existing test source and prior claims were not counted as executed evidence.
+- **Command:** `docker compose build backend` using `maven:3.9-eclipse-temurin-17-alpine`
+- **Result:** 7 tests passed: application context (1), stock service (2), transport payments (3), and transport bills (1).
+- **Migration verification:** Fresh PostgreSQL database applied V1, V2, V2.1, V3, V4, V5, and V6 successfully. V6 disables the known bootstrap account and startup provisions the configured administrator.
 
 ### 2.3 Previously Documented Backend Coverage (Unverified Here)
 - **Multi-Bill Allocations:** Verifies a single payment can be proportionally allocated across multiple transport bills (`testCreatePaymentWithMultiBillAllocations`).
@@ -51,6 +53,7 @@
 ---
 
 ## 3. Remaining Testing Recommendations
-- Install Maven or add a Maven Wrapper, then run the full backend suite with PostgreSQL/Testcontainers where practical.
-- Fix the 12 frontend lint errors before treating CI as green.
+- Add a Maven Wrapper for host-side reproducibility; Docker Java 17 currently provides the verified build path. Include Flyway checksum verification and role-based mutation authorization tests in future coverage.
+- Frontend lint is now green; the build retains only a non-blocking large-chunk warning.
 - Add frontend unit tests and Playwright coverage for authentication, document upload/download authorization, transport payments, and stock isolation.
+- `npm audit --omit=dev --audit-level=high` reports two moderate React Router advisories; the suggested fix is a breaking React Router 7 upgrade and requires compatibility review.

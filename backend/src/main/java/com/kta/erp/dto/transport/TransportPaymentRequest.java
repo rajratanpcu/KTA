@@ -36,4 +36,5 @@ public class TransportPaymentRequest {
 
     @Valid
     private List<PaymentAllocationRequest> allocations = new ArrayList<>();
+
 }

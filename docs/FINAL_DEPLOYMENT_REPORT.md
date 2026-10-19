@@ -3,7 +3,7 @@
 **Date:** October 2026  
 **Repository:** https://github.com/rajratanpcu/KTA  
 **Target Architecture:** Vercel (Frontend Edge) + Render (Spring Boot Docker) + Managed PostgreSQL (Render / Neon)  
-**Final Release Status:** **READY FOR LIMITED TESTING (Staging & Staged Deployment Ready)**
+**Final Release Status:** **NOT PRODUCTION READY (Live deployment, persistent storage, and OCR verification pending)**
 
 ---
 
@@ -11,9 +11,7 @@
 
 In accordance with the **KTA ERP Production Testing, Security Hardening & Deployment Prompt**, the KTA ERP repository has undergone comprehensive technical auditing, dependency modernization, security hardening, automated test development, and zero-configuration cloud deployment preparation.
 
-All 139 core application files, schema migrations, test suites, and deployment blueprints have been committed and prepared for the repository:
-- **Git Commit:** `c3c86da` (Branch `main`)
-- **Remote:** `https://github.com/rajratanpcu/KTA.git`
+The repository has been audited and verified locally with Docker-backed Maven tests, fresh PostgreSQL migrations, and local frontend/backend smoke checks. No live deployment is claimed from this environment.
 
 ---
 
@@ -22,10 +20,10 @@ All 139 core application files, schema migrations, test suites, and deployment b
 | Test Category | Suite / Runner | Scope & Results | Status |
 |---|---|---|---|
 | **Frontend Static Analysis** | TypeScript 5.4 (`tsc --noEmit`) | Replaced external HTTP client with zero-dependency typed native fetch client; typed all React Query v5 hooks. 0 errors. | **PASSED** |
-| **Transport Payments & Ledger** | JUnit 5 + Mockito (`TransportPaymentServiceTest`) | Verified multi-bill allocations, balance deductions, over-allocation rejections, and payment idempotency. | **PASSED** |
-| **Inventory & Warehouse Stock** | JUnit 5 + Mockito (`StockServiceTest`) | Verified inward receipts increment stock, outward transactions enforce non-negative balances. | **PASSED** |
-| **Transport Bills & Stock Isolation** | JUnit 5 + Mockito (`TransportBillServiceTest`) | Verified freight charges, loading/unloading, GST, and TDS arithmetic; verified transport bills strictly do NOT touch stock quantities. | **PASSED** |
-| **Context & Slicing** | Spring Boot Test (`KtaErpApplicationTests`) | PostgreSQL-mode H2 test configuration (`application-test.properties`). | **READY (CI)** |
+| **Transport Payments & Ledger** | Docker Java 17 + Maven / JUnit 5 + Mockito | 3 tests passed, including allocations, over-allocation rejection, and duplicate payment detection. | **PASSED** |
+| **Inventory & Warehouse Stock** | Docker Java 17 + Maven / JUnit 5 + Mockito | 2 tests passed, including inward stock and insufficient-stock rejection. | **PASSED** |
+| **Transport Bills & Stock Isolation** | Docker Java 17 + Maven / JUnit 5 + Mockito | 1 test passed, including arithmetic and no stock interaction. | **PASSED** |
+| **Context & Slicing** | Docker Java 17 + Spring Boot Test | Application context test passed; fresh PostgreSQL migrations also passed. | **PASSED** |
 | **CI/CD Pipeline** | GitHub Actions (`.github/workflows/ci.yml`) | Automated build, type-check, and Maven test suite triggered on every push and pull request. | **CONFIGURED** |
 
 ---
@@ -68,7 +66,7 @@ All 139 core application files, schema migrations, test suites, and deployment b
        +----------------------v----+     +----v------------------------+
        | Render / Neon PostgreSQL  |     | Private Local / Cloud Storage
        | - PostgreSQL 15 Managed   |     | - Scanned Bill PDF/Images   |
-       | - Flyway V1, V2, V3       |     | - UUID Filename Obfuscation |
+      | - Flyway V1-V6            |     | - UUID Filename Obfuscation |
        | - Triggered Balance Sync  |     | - Metadata stored in PG     |
        +---------------------------+     +-----------------------------+
 ```

@@ -3,6 +3,7 @@ package com.kta.erp.controller.transport;
 import com.kta.erp.dto.transport.TransportPaymentRequest;
 import com.kta.erp.dto.transport.TransportPaymentResponse;
 import com.kta.erp.service.transport.TransportPaymentService;
+import com.kta.erp.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/transport/payments")
@@ -20,6 +22,7 @@ import java.util.List;
 public class TransportPaymentController {
 
     private final TransportPaymentService paymentService;
+    private final UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<List<TransportPaymentResponse>> getAllPayments() {
@@ -51,8 +54,8 @@ public class TransportPaymentController {
     @PostMapping
     public ResponseEntity<TransportPaymentResponse> createPayment(
             @Valid @RequestBody TransportPaymentRequest request,
-            @RequestHeader("X-User-Id") Long userId) {
-        TransportPaymentResponse created = paymentService.createPayment(request, userId);
+            Principal principal) {
+        TransportPaymentResponse created = paymentService.createPayment(request, getUserId(principal));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -60,5 +63,11 @@ public class TransportPaymentController {
     public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
         paymentService.deletePayment(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Long getUserId(Principal principal) {
+        return userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new IllegalStateException("Authenticated user was not found"))
+                .getId();
     }
 }

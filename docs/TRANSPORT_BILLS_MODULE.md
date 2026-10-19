@@ -1,8 +1,8 @@
 # Transport Bills Module - Implementation Summary
 
-## Status: UI Prototype Complete ✅
+## Status: Partial Implementation - Backend Available, Frontend Workflow Still Prototype
 
-The Transport Bill Scanning & Management module has been added to the KTA ERP prototype with a complete user interface demonstrating all requested features.
+The module has a demo-driven frontend and a Spring Boot backend for transport bills, payments, stock isolation, and protected document metadata. It is not production ready until OCR integration, durable private storage, and end-to-end frontend/API wiring are completed.
 
 ## What's Been Added
 
@@ -91,17 +91,28 @@ Each bill includes:
 ✅ Clear visual hierarchy
 ✅ Accessible components
 
-### 5. What's Simulated (Prototype Only)
+### 5. Current Limitations
 
 Since this is Phase 1 (UI Prototype), the following features show the interface but don't actually work yet:
 
-❌ **Actual OCR/AI extraction** - Shows loading animation, will be implemented in backend
-❌ **File upload to server** - Files selected but not processed
-❌ **Database persistence** - Uses demo data only
-❌ **Payment processing** - Shows form but doesn't save
-❌ **Document storage** - No actual PDF viewing yet
-❌ **Ledger calculations** - Static demo numbers
-❌ **Authentication** - No user roles enforced
+⚠️ **Actual OCR/AI extraction** - No provider is configured; the workflow now uploads the document and provides an explicit manual-entry fallback instead of fabricating extracted values.
+⚠️ **File upload to server** - The frontend now sends files to the authenticated backend upload endpoint; OCR extraction is still pending.
+✅ **Database persistence** - Bill, transporter, and payment read views use backend data; uploaded documents and reviewed bill drafts are persisted through the backend.
+✅ **Payment processing** - The frontend records partial/full payments through the backend allocation API and validates against the outstanding balance.
+⚠️ **Document storage** - Local filesystem storage exists for development only; Render storage is ephemeral.
+✅ **Ledger calculations** - Backend database trigger recalculates bill balances; deletion handling is corrected in Flyway V4.
+✅ **Authentication and roles** - API requires authentication; mutation permissions are role-gated and audit user identity is server-derived.
+
+### 6. Backend API Surface
+
+- `POST /api/transport/documents/upload` validates type, extension, size, ownership, and normalized paths.
+- `GET /api/transport/documents/download/{filename}` requires authenticated owner, manager, or administrator access.
+- `GET/POST/PUT/DELETE /api/transport/bills` provides bill CRUD and calculated balances.
+- `GET/POST/DELETE /api/transport/payments` supports payments and allocations.
+- Payment allocations reject cross-transporter bills and amounts above the bill balance.
+- Transport bill and payment operations do not call stock mutation services.
+
+All protected API mutations derive the acting user from the authenticated database account; clients must not send `X-User-Id`.
 
 ## How to Access
 
@@ -121,18 +132,16 @@ Since this is Phase 1 (UI Prototype), the following features show the interface 
 8. ✅ **Click View icon** - See bill details (to be completed)
 9. ✅ **Click Payment icon** - Record payment interface (to be completed)
 
-## Next Steps - When Building Backend (Phase 2+)
+## Remaining Production Work
 
-When we build the actual backend application, we'll add:
+The remaining work is:
 
 ### Backend Services:
-1. **Document Upload API** - Multer/Spring multipart handling
-2. **OCR Integration** - Tesseract or cloud OCR service
-3. **AI Extraction** - LLM-based bill parsing
-4. **PostgreSQL Schema** - Tables for transporters, bills, payments, allocations
-5. **Payment Logic** - Allocation, balance calculations, ledger
-6. **Duplicate Detection** - Bill number validation
-7. **Audit Trail** - Track all changes
+1. **OCR integration** - Connect the approved private OCR/AI service with timeout and manual-entry fallback.
+2. **Frontend API wiring** - Replace demo transport data with query/mutation hooks and complete review/payment dialogs.
+3. **Private storage** - Move permanent documents to private object storage or a persistent mounted volume.
+4. **Authorization tests** - Add API tests for roles, document ownership, cross-transporter allocation, and rollback.
+5. **Deployment verification** - Run migrations, upload/download, payment, and restart persistence tests against real services.
 
 ### Enhanced Features:
 1. **Review Screen** - Show extracted vs. original side-by-side

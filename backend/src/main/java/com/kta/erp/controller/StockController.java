@@ -6,6 +6,7 @@ import com.kta.erp.dto.StockMovementResponse;
 import com.kta.erp.dto.StockTransferRequest;
 import com.kta.erp.dto.StockTransferResponse;
 import com.kta.erp.service.StockService;
+import com.kta.erp.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/stock")
@@ -20,6 +22,7 @@ import java.util.List;
 public class StockController {
 
     private final StockService stockService;
+    private final UserRepository userRepository;
 
     // ===== Balances =====
 
@@ -63,8 +66,8 @@ public class StockController {
     @PostMapping("/movements")
     public ResponseEntity<StockMovementResponse> recordMovement(
             @Valid @RequestBody StockMovementRequest request,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
-        StockMovementResponse created = stockService.recordMovement(request, userId);
+            Principal principal) {
+        StockMovementResponse created = stockService.recordMovement(request, getUserId(principal));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -83,16 +86,22 @@ public class StockController {
     @PostMapping("/transfers")
     public ResponseEntity<StockTransferResponse> createTransfer(
             @Valid @RequestBody StockTransferRequest request,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
-        StockTransferResponse created = stockService.createTransfer(request, userId);
+            Principal principal) {
+        StockTransferResponse created = stockService.createTransfer(request, getUserId(principal));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PostMapping("/transfers/{id}/receive")
     public ResponseEntity<StockTransferResponse> receiveTransfer(
             @PathVariable Long id,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
-        StockTransferResponse received = stockService.receiveTransfer(id, userId);
+            Principal principal) {
+        StockTransferResponse received = stockService.receiveTransfer(id, getUserId(principal));
         return ResponseEntity.ok(received);
+    }
+
+    private Long getUserId(Principal principal) {
+        return userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new IllegalStateException("Authenticated user was not found"))
+                .getId();
     }
 }

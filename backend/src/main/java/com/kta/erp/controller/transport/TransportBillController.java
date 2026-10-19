@@ -3,6 +3,7 @@ package com.kta.erp.controller.transport;
 import com.kta.erp.dto.transport.TransportBillRequest;
 import com.kta.erp.dto.transport.TransportBillResponse;
 import com.kta.erp.service.transport.TransportBillService;
+import com.kta.erp.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/transport/bills")
@@ -18,6 +20,7 @@ import java.util.List;
 public class TransportBillController {
 
     private final TransportBillService billService;
+    private final UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<List<TransportBillResponse>> getAllBills() {
@@ -57,8 +60,8 @@ public class TransportBillController {
     @PostMapping
     public ResponseEntity<TransportBillResponse> createBill(
             @Valid @RequestBody TransportBillRequest request,
-            @RequestHeader("X-User-Id") Long userId) {
-        TransportBillResponse created = billService.createBill(request, userId);
+            Principal principal) {
+        TransportBillResponse created = billService.createBill(request, getUserId(principal));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -66,13 +69,19 @@ public class TransportBillController {
     public ResponseEntity<TransportBillResponse> updateBill(
             @PathVariable Long id,
             @Valid @RequestBody TransportBillRequest request,
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(billService.updateBill(id, request, userId));
+            Principal principal) {
+        return ResponseEntity.ok(billService.updateBill(id, request, getUserId(principal)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBill(@PathVariable Long id) {
         billService.deleteBill(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Long getUserId(Principal principal) {
+        return userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new IllegalStateException("Authenticated user was not found"))
+                .getId();
     }
 }

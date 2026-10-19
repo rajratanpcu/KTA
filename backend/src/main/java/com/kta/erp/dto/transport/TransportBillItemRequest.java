@@ -41,4 +41,12 @@ public class TransportBillItemRequest {
     private BigDecimal amount;
 
     private Boolean needsReview = false;
+
+    public void setItemDescription(String itemDescription) {
+        this.itemName = itemDescription;
+    }
+
+    public void setWeightKg(BigDecimal weightKg) {
+        this.weight = weightKg;
+    }
 }

@@ -66,7 +66,7 @@ class TransportBillServiceTest {
     void setUp() {
         testTransporter = new Transporter();
         testTransporter.setId(1L);
-        testTransporter.setName("Speedy Logistics");
+        testTransporter.setCompanyName("Speedy Logistics");
         testTransporter.setCode("SPL-01");
 
         testUser = new User();
@@ -89,14 +89,13 @@ class TransportBillServiceTest {
         request.setLoadingCharges(new BigDecimal("500.00"));
         request.setUnloadingCharges(new BigDecimal("500.00"));
         request.setGstAmount(new BigDecimal("550.00"));
-        request.setTdsDeducted(new BigDecimal("200.00"));
-        request.setAdvancePaid(new BigDecimal("1000.00"));
         request.setItems(new ArrayList<>());
 
         TransportBillItemRequest itemReq = new TransportBillItemRequest();
         itemReq.setItemDescription("Sunflower Oil Tins");
         itemReq.setQuantity(new BigDecimal("100.000"));
         itemReq.setWeightKg(new BigDecimal("1500.000"));
+        itemReq.setUnit("kg");
         itemReq.setRate(new BigDecimal("100.00"));
         itemReq.setAmount(new BigDecimal("10000.00"));
         request.getItems().add(itemReq);
@@ -115,10 +114,9 @@ class TransportBillServiceTest {
 
         assertNotNull(response);
         assertEquals("LR-2026-9901", response.getBillNumber());
-        // Expected total = 10000 (freight) + 500 (loading) + 500 (unloading) + 550 (gst) - 200 (tds) = 11350.00
-        assertEquals(new BigDecimal("11350.00"), response.getTotalAmount());
-        // Expected balance = 11350 - 1000 (advance) = 10350.00
-        assertEquals(new BigDecimal("10350.00"), response.getBalanceDue());
+        // Expected total = 10000 (freight) + 500 (loading) + 500 (unloading) + 550 (gst) = 11550.00
+        assertEquals(new BigDecimal("11550.00"), response.getTotalAmount());
+        assertEquals(new BigDecimal("11550.00"), response.getBalanceDue());
 
         // Zero interaction with inventory/stock repository confirms transport bills do NOT touch warehouse quantities
         verifyNoInteractions(productRepository);

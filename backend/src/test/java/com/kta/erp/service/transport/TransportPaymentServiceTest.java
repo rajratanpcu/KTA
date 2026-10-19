@@ -61,7 +61,7 @@ class TransportPaymentServiceTest {
     void setUp() {
         testTransporter = new Transporter();
         testTransporter.setId(1L);
-        testTransporter.setName("Fast Cargo Movers");
+        testTransporter.setCompanyName("Fast Cargo Movers");
         testTransporter.setCode("TRP-001");
 
         testUser = new User();
@@ -93,7 +93,7 @@ class TransportPaymentServiceTest {
         request.setPaymentNumber("PAY-TRP-2026-001");
         request.setTransporterId(1L);
         request.setPaymentDate(LocalDate.now());
-        request.setPaymentMode(TransportPayment.PaymentMode.NEFT);
+        request.setPaymentMethod(TransportPayment.PaymentMethod.BANK_TRANSFER.name());
         request.setAmount(new BigDecimal("30000.00"));
         request.setAllocations(new ArrayList<>());
 
