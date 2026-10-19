@@ -104,8 +104,8 @@ export default function Godowns() {
       } else {
         addToast('Godown saved (demo mode — connect backend for persistence)', 'info')
       }
-    } catch (err: any) {
-      addToast(err.message || 'Failed to save godown', 'error')
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : 'Failed to save godown', 'error')
     }
 
     setIsCreateOpen(false)

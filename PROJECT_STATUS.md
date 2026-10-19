@@ -281,14 +281,13 @@ npm run dev
 ## Default Credentials
 
 **Admin User:**
-- Username: `admin`
-- Password: `admin123`
+- No default application credential is committed. Provision an administrator securely before first use.
 
 **Database:**
 - Host: `localhost:5432`
 - Database: `kta_erp`
 - User: `kta`
-- Password: `changeme`
+- Password: configured through the local `.env` file and never committed
 
 ---
 

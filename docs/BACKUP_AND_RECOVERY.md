@@ -6,6 +6,8 @@
 
 ## 1. Automated vs. Manual Backups
 
+Scanned documents are not protected by PostgreSQL dumps because the database stores metadata while the files are stored separately. Do not use Render's ephemeral filesystem for permanent bills. Configure private object storage or a persistent mounted volume, back up that storage independently, and test an authorized download after restore.
+
 ### 1.1 Neon Cloud Backups (Point-in-Time Recovery)
 - Neon maintains continuous Write-Ahead Log (WAL) records for Point-in-Time Restore (PITR) up to the limit of your project retention (typically 24 hours to 7 days on free/standard plans).
 - To create a point-in-time branch/snapshot:

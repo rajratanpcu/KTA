@@ -3,15 +3,12 @@ import {
   FileText,
   Upload,
   Eye,
-  Edit,
   DollarSign,
   Search,
-  Filter,
   AlertCircle,
   CheckCircle,
   Camera,
   IndianRupee,
-  Calendar,
   Building2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,15 +25,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   demoTransportBills,
   demoTransporters,
   demoTransportPayments,
   calculateBillSummary
 } from '@/data/transportData'
-import type { TransportBill, Transporter, TransportPayment } from '@/types/transport'
+import type { TransportBill } from '@/types/transport'
 
 export default function TransportBills() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -44,10 +39,9 @@ export default function TransportBills() {
   const [transporterFilter, setTransporterFilter] = useState('all')
   const [isScanOpen, setIsScanOpen] = useState(false)
   const [isReviewOpen, setIsReviewOpen] = useState(false)
-  const [selectedBill, setSelectedBill] = useState<TransportBill | null>(null)
-  const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  const [, setSelectedBill] = useState<TransportBill | null>(null)
   const [viewMode, setViewMode] = useState<'bills' | 'transporters' | 'payments'>('bills')
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [, setSelectedFile] = useState<File | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
 
   const summary = calculateBillSummary()
@@ -89,7 +83,6 @@ export default function TransportBills() {
 
   const handleRecordPayment = (bill: TransportBill) => {
     setSelectedBill(bill)
-    setIsPaymentOpen(true)
   }
 
   return (
@@ -278,7 +271,6 @@ export default function TransportBills() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setSelectedBill(bill)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -458,7 +450,7 @@ export default function TransportBills() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Use your device camera to capture the bill
                   </p>
-                  <Button variant="outline" onClick={handleFileSelect as any}>
+                  <Button variant="outline" onClick={() => document.getElementById('transport-bill-file')?.click()}>
                     <Camera className="h-4 w-4 mr-2" />
                     Open Camera
                   </Button>

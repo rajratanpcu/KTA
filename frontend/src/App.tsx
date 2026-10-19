@@ -14,11 +14,21 @@ import Suppliers from './pages/Suppliers'
 import Reports from './pages/Reports'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
+import Login from './pages/Login'
+
+function RequireAuth({ children }: { children: JSX.Element }) {
+  const isAuthenticated = Boolean(
+    sessionStorage.getItem('kta_auth_username') && sessionStorage.getItem('kta_auth_password')
+  )
+
+  return isAuthenticated ? children : <Navigate to="/login" replace />
+}
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="products" element={<Products />} />

@@ -41,8 +41,6 @@ services:
       - key: DB_MIN_IDLE
         value: "2"
       - key: CORS_ALLOWED_ORIGINS
-        value: "*"
+        sync: false
       - key: UPLOAD_DIR
         value: /tmp/kta-uploads
-      - key: ADMIN_PASSWORD
-        generateValue: true

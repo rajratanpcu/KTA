@@ -1,9 +1,14 @@
 // Native fetch-based HTTP client matching the axios client interface
 // Completely zero-dependency to guarantee compatibility in all deployment targets
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080';
+const viteEnv = (import.meta as ImportMeta & {
+  env?: Record<string, string | undefined>
+}).env;
+const API_BASE_URL = viteEnv?.VITE_API_BASE_URL || 'http://localhost:8080';
+const USERNAME_KEY = 'kta_auth_username';
+const PASSWORD_KEY = 'kta_auth_password';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   status: number;
   statusText: string;
@@ -23,7 +28,7 @@ class HttpClient {
     this.baseURL = baseURL;
   }
 
-  private buildUrl(path: string, params?: Record<string, any>): string {
+  private buildUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     const url = new URL(`${this.baseURL}${cleanPath}`);
     if (params) {
@@ -42,10 +47,11 @@ class HttpClient {
       Accept: 'application/json',
     };
     try {
-      const token = localStorage.getItem('kta_token');
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const userId = localStorage.getItem('kta_user_id') || '1';
-      headers['X-User-Id'] = userId;
+      const username = sessionStorage.getItem(USERNAME_KEY);
+      const password = sessionStorage.getItem(PASSWORD_KEY);
+      if (username && password) {
+        headers['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`;
+      }
     } catch {
       // Safe fallback for SSR or restricted environments
     }
@@ -55,7 +61,7 @@ class HttpClient {
   private async request<T>(
     method: string,
     path: string,
-    body?: any,
+    body?: unknown,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
     const url = this.buildUrl(path, config?.params);
@@ -83,7 +89,7 @@ class HttpClient {
       clearTimeout(timeout);
 
       const contentType = response.headers.get('content-type');
-      let data: any = null;
+      let data: unknown = null;
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
       } else {
@@ -93,7 +99,8 @@ class HttpClient {
       if (!response.ok) {
         if (response.status === 401) {
           try {
-            localStorage.removeItem('kta_token');
+            sessionStorage.removeItem(USERNAME_KEY);
+            sessionStorage.removeItem(PASSWORD_KEY);
             if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
               window.location.href = '/login';
             }
@@ -101,9 +108,12 @@ class HttpClient {
             // ignore
           }
         }
+        const responseData = typeof data === 'object' && data !== null
+          ? data as { message?: unknown; errors?: Record<string, unknown> }
+          : {};
         const message =
-          data?.message ||
-          (data?.errors ? Object.values(data.errors).join(', ') : null) ||
+          (typeof responseData.message === 'string' ? responseData.message : null) ||
+          (responseData.errors ? Object.values(responseData.errors).map(String).join(', ') : null) ||
           `Request failed with status ${response.status}`;
         throw new Error(message);
       }
@@ -114,9 +124,9 @@ class HttpClient {
         statusText: response.statusText,
         headers: {},
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timeout);
-      if (err.name === 'AbortError') {
+      if (err instanceof DOMException && err.name === 'AbortError') {
         throw new Error('Request timed out');
       }
       throw err;
@@ -127,11 +137,11 @@ class HttpClient {
     return this.request<T>('GET', path, undefined, config);
   }
 
-  post<T>(path: string, body?: any, config?: RequestConfig): Promise<ApiResponse<T>> {
+  post<T>(path: string, body?: unknown, config?: RequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>('POST', path, body, config);
   }
 
-  put<T>(path: string, body?: any, config?: RequestConfig): Promise<ApiResponse<T>> {
+  put<T>(path: string, body?: unknown, config?: RequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>('PUT', path, body, config);
   }
 

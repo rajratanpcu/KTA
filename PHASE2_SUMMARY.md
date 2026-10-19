@@ -16,7 +16,7 @@
 - Products with SKU, pricing, GST, min stock levels
 - Godowns (warehouses) with location details
 - Suppliers and Customers with GST information
-- Default admin user (username: admin, password: admin123)
+- No default admin credential is seeded; an administrator must be provisioned through an approved secure process.
 - 5 default units (kg, L, pack, pcs, box)
 - 5 default categories (Grains, Oils, Pulses, Sugar & Salt, Beverages)
 

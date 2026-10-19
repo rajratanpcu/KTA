@@ -112,10 +112,6 @@ CREATE INDEX idx_godowns_active ON godowns(active);
 CREATE INDEX idx_suppliers_active ON suppliers(active);
 CREATE INDEX idx_customers_active ON customers(active);
 
--- Insert default admin user (password: admin123)
-INSERT INTO users (username, password, full_name, email, role, active) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Admin User', 'admin@kta.local', 'ADMIN', true);
-
 -- Insert default units
 INSERT INTO units (name, abbreviation) VALUES
 ('Kilogram', 'kg'),

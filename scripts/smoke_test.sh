@@ -52,12 +52,16 @@ test_endpoint "Backend Health Check" "${BACKEND_URL}/actuator/health" "200"
 test_endpoint "Security Barrier (Unauthorized Access)" "${BACKEND_URL}/api/products" "401"
 
 # 3. Authenticated Core REST API Queries
-AUTH="Authorization: Basic YWRtaW46YWRtaW4xMjM=" # admin:admin123 base64
-test_endpoint "Categories API (Authenticated)" "${BACKEND_URL}/api/categories" "200" "${AUTH}"
-test_endpoint "Products API (Authenticated)" "${BACKEND_URL}/api/products" "200" "${AUTH}"
-test_endpoint "Godowns API (Authenticated)" "${BACKEND_URL}/api/godowns" "200" "${AUTH}"
-test_endpoint "Stock Balances API (Authenticated)" "${BACKEND_URL}/api/stock/balances" "200" "${AUTH}"
-test_endpoint "Transport Bills API (Authenticated)" "${BACKEND_URL}/api/transport/bills" "200" "${AUTH}"
+if [ -n "${KTA_SMOKE_USERNAME:-}" ] && [ -n "${KTA_SMOKE_PASSWORD:-}" ]; then
+    AUTH="Authorization: Basic $(printf '%s' "${KTA_SMOKE_USERNAME}:${KTA_SMOKE_PASSWORD}" | base64 | tr -d '\n')"
+    test_endpoint "Categories API (Authenticated)" "${BACKEND_URL}/api/categories" "200" "${AUTH}"
+    test_endpoint "Products API (Authenticated)" "${BACKEND_URL}/api/products" "200" "${AUTH}"
+    test_endpoint "Godowns API (Authenticated)" "${BACKEND_URL}/api/godowns" "200" "${AUTH}"
+    test_endpoint "Stock Balances API (Authenticated)" "${BACKEND_URL}/api/stock/balances" "200" "${AUTH}"
+    test_endpoint "Transport Bills API (Authenticated)" "${BACKEND_URL}/api/transport/bills" "200" "${AUTH}"
+else
+    echo "[SKIP] Authenticated API checks require KTA_SMOKE_USERNAME and KTA_SMOKE_PASSWORD"
+fi
 
 # 4. Frontend Asset & Single Page App Availability
 test_endpoint "Frontend Landing Page" "${FRONTEND_URL}/" "200"

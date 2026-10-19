@@ -40,12 +40,13 @@
    - `SPRING_DATASOURCE_URL` = `jdbc:postgresql://<neon-host>/kta_erp?sslmode=require`
    - `SPRING_DATASOURCE_USERNAME` = `<neon-username>`
    - `SPRING_DATASOURCE_PASSWORD` = `<neon-password>`
-   - `ADMIN_PASSWORD` = `<choose-strong-password>`
-   - `CORS_ALLOWED_ORIGINS` = `https://kta-erp.vercel.app,http://localhost:5173`
+   - `CORS_ALLOWED_ORIGINS` = `https://<actual-vercel-domain>`
    - `DB_MAX_POOL_SIZE` = `5`
 5. Click **Create Web Service**.
 6. Render will build the Docker container and start Spring Boot.
 7. **Verification:** Test health check by visiting `https://kta-erp-backend.onrender.com/actuator/health`. Expected response: `{"status":"UP"}`.
+
+The seeded `admin` account is a development bootstrap credential. Rotate its BCrypt password directly in the approved database before any shared deployment; do not configure administrator passwords through Spring's default-user properties.
 
 *Operational Note on Render Free Tier:* Free services spin down after 15 minutes of inactivity. When a new request arrives, it takes 30–50 seconds to cold-start. This is normal on the free tier.
 
@@ -74,5 +75,9 @@ Run the automated smoke testing script against your deployed URLs:
 ```
 Confirm:
 1. Health endpoint returns HTTP 200 `UP`.
-2. Master categories and products return valid JSON.
-3. Stock balance and transport bills load seamlessly on the Vercel frontend.
+2. Requests to `/api/**` without authentication return HTTP 401.
+3. Authenticated master, stock, and transport-bill requests return valid JSON.
+4. Document downloads require authentication and authorized ownership/role.
+5. Stock balance and transport bills load seamlessly on the Vercel frontend.
+
+Do not treat the deployment as complete until these checks run against the actual deployed URLs. No live URL is currently verified by this repository.

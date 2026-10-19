@@ -2,6 +2,8 @@ package com.kta.erp.controller.transport;
 
 import com.kta.erp.entity.transport.ScannedDocument;
 import com.kta.erp.repository.transport.ScannedDocumentRepository;
+import com.kta.erp.repository.UserRepository;
+import com.kta.erp.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +22,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/transport/documents")
@@ -28,6 +31,7 @@ import java.util.*;
 public class DocumentUploadController {
 
     private final ScannedDocumentRepository documentRepository;
+    private final UserRepository userRepository;
 
     @Value("${kta.storage.upload-dir:/tmp/kta-uploads}")
     private String uploadDirectory;
@@ -44,7 +48,7 @@ public class DocumentUploadController {
     public ResponseEntity<?> uploadDocument(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "documentType", defaultValue = "TRANSPORT_BILL") String documentType,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+            Principal principal) {
 
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "File is required and cannot be empty"));
@@ -86,25 +90,25 @@ public class DocumentUploadController {
 
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            // Record document in database
+                User uploadedBy = userRepository.findByUsername(principal.getName())
+                    .orElseThrow(() -> new IllegalStateException("Authenticated user was not found"));
+
+                // Record document metadata without trusting client-supplied ownership.
             ScannedDocument doc = new ScannedDocument();
-            doc.setOriginalFilename(originalFilename);
-            doc.setStoredFilename(storageFileName);
-            doc.setFileUrl("/api/transport/documents/download/" + storageFileName);
-            doc.setMimeType(contentType);
+                doc.setFileName(originalFilename);
+                doc.setFileType(contentType);
             doc.setFileSize(file.getSize());
-            doc.setDocumentType(ScannedDocument.DocumentType.TRANSPORT_BILL);
-            doc.setOcrStatus(ScannedDocument.OcrStatus.PENDING);
-            doc.setCreatedAt(LocalDateTime.now());
+                doc.setFilePath(storageFileName);
+                doc.setUploadedBy(uploadedBy);
+                doc.setUploadedAt(LocalDateTime.now());
 
             ScannedDocument saved = documentRepository.save(doc);
 
             Map<String, Object> response = new HashMap<>();
             response.put("documentId", saved.getId());
-            response.put("originalFilename", saved.getOriginalFilename());
-            response.put("fileUrl", saved.getFileUrl());
+            response.put("originalFilename", saved.getFileName());
+            response.put("fileUrl", "/api/transport/documents/download/" + saved.getFilePath());
             response.put("fileSize", saved.getFileSize());
-            response.put("ocrStatus", saved.getOcrStatus());
             response.put("message", "Document uploaded successfully");
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -117,14 +121,30 @@ public class DocumentUploadController {
     }
 
     @GetMapping("/download/{filename:.+}")
-    public ResponseEntity<?> downloadDocument(@PathVariable String filename) {
+    public ResponseEntity<?> downloadDocument(@PathVariable String filename, Principal principal) {
         // Prevent path traversal
         if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
             return ResponseEntity.badRequest().body("Invalid document request");
         }
 
         try {
-            Path filePath = Paths.get(uploadDirectory).resolve(filename).normalize();
+                ScannedDocument document = documentRepository.findByFilePath(filename)
+                    .orElseThrow(() -> new java.util.NoSuchElementException("Document not found"));
+                User requester = userRepository.findByUsername(principal.getName())
+                    .orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
+                boolean owner = document.getUploadedBy() != null
+                    && document.getUploadedBy().getId().equals(requester.getId());
+                boolean privileged = requester.getRole() == User.Role.ADMIN
+                    || requester.getRole() == User.Role.MANAGER;
+                if (!owner && !privileged) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Document access denied");
+                }
+
+                Path storageRoot = Paths.get(uploadDirectory).toAbsolutePath().normalize();
+                Path filePath = storageRoot.resolve(document.getFilePath()).normalize();
+                if (!filePath.startsWith(storageRoot)) {
+                return ResponseEntity.badRequest().body("Invalid document request");
+                }
             File file = filePath.toFile();
 
             if (!file.exists() || !file.canRead()) {
@@ -140,6 +160,8 @@ public class DocumentUploadController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getName() + "\"")
                     .body(content);
 
+        } catch (java.util.NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document not found");
         } catch (IOException ex) {
             log.error("Error retrieving stored document", ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

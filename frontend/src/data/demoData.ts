@@ -3,15 +3,10 @@ import type {
   Godown,
   StockBalance,
   StockMovement,
-  Transfer,
   Supplier,
-  PurchaseOrder,
   Customer,
-  Sale,
   Transporter,
   Vehicle,
-  Shipment,
-  Expense,
   User,
 } from '@/types'
 

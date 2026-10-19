@@ -2,7 +2,7 @@
 **Document Version:** 1.0.0  
 **Date:** October 2026  
 **Auditor:** Senior QA & DevOps Security Engineering Team  
-**Audit Status:** AUDIT COMPLETED — NOT PRODUCTION READY (Pre-Hardening & Deployment Staging)
+**Audit Status:** AUDIT COMPLETED — NOT PRODUCTION READY (Security hardening in progress)
 
 ---
 
@@ -11,14 +11,14 @@
 This audit assesses the technical maturity, security posture, automated testing coverage, and deployment readiness of the **KTA ERP** repository (built for a retail and wholesale distribution enterprise with 6+ godowns and 2–5 concurrent users).
 
 ### Key Findings
-- **Frontend Architecture:** Modern, clean React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui application. Live-connected with TanStack Query v5 and Axios with graceful fallback to demo datasets.
+- **Frontend Architecture:** React 18 + TypeScript + Vite + Tailwind CSS application. Live-connected with TanStack Query v5 and a native fetch client with graceful fallback to demo datasets.
 - **Backend Architecture:** Spring Boot 3.1.5 (Java 17) modular monolith with PostgreSQL 15, Flyway versioned migrations (V1, V2, V3), JPA entities, Jakarta validation, and custom repositories.
 - **Critical Strengths:** Precise financial/quantity modeling (`DECIMAL(15, 2)` for currency, `DECIMAL(15, 3)` for stock quantities); strict separation of concerns; automated database trigger for bill balance recalculation.
-- **Critical Gaps Pre-Audit:**
-  1. *Security:* Basic authentication enabled with placeholder in-memory credentials; JWT filter and role-based route guards not active; CORS currently defaults to `localhost:5173`.
-  2. *Testing:* Zero automated unit, slice, or integration tests in `backend/src/test/java`.
-  3. *AI/OCR & File Uploads:* Controller endpoint for multipart document uploads missing; OCR parsing pipeline stubbed in data mocks without backend OCR provider connection.
-  4. *CI/CD & Cloud Hosting:* No GitHub Actions workflows; missing production-ready container/manifest configurations for Render and Vercel.
+- **Current Critical Gaps:**
+  1. *Security:* Database-backed BCrypt plus HTTP Basic and a minimal frontend login are now configured. Method-level authorization and credential rotation remain incomplete.
+  2. *Testing:* Frontend typecheck/build pass locally, lint fails, and Maven could not run because Maven is unavailable in the current Windows environment. Backend test claims are therefore unverified here.
+  3. *AI/OCR & File Uploads:* Multipart upload exists with MIME/size checks, but OCR integration and private persistent object storage are not implemented. Render local storage is ephemeral.
+  4. *Deployment:* CI exists, but it currently fails on the known frontend lint errors until they are fixed. No live deployment URL has been verified.
 
 ---
 
@@ -28,7 +28,7 @@ This audit assesses the technical maturity, security posture, automated testing 
 - **Framework & Build:** React 18.2.0, TypeScript 5.2.2, Vite 5.0.0.
 - **State & Data Fetching:** TanStack React Query v5 (`@tanstack/react-query`) with 5-minute stale-time caching.
 - **UI Components:** Tailwind CSS 3.3.5, Lucide React icons, Radix UI primitives.
-- **API Client:** Axios instance in `src/lib/api-client.ts` with request interceptor for `Authorization: Bearer <token>` and `X-User-Id`, plus uniform response error unwrapping.
+- **API Client:** Native fetch client in `src/lib/api-client.ts`; it sends session-scoped HTTP Basic credentials after the frontend login succeeds and clears them on HTTP 401.
 - **Working Modules:**
   - Dashboard & Analytics (Metrics, recent transactions, stock alerts).
   - Products Master (CRUD, SKU generation, reorder levels).
@@ -60,11 +60,11 @@ This audit assesses the technical maturity, security posture, automated testing 
 
 | Risk Domain | Current State | Risk Level | Required Remediation |
 |---|---|---|---|
-| **Authentication** | Spring HTTP Basic Auth (`admin`/`admin123`) | **HIGH** | Implement stateless JWT token authentication with BCrypt hashing and secure secret handling. |
-| **Authorization** | `anyRequest().permitAll()` after `/api/**` authenticated | **MEDIUM** | Role-based permissions (`ROLE_ADMIN`, `ROLE_MANAGER`, `ROLE_STAFF`) on sensitive financial and stock operations. |
-| **CORS Configuration** | Hardcoded to `http://localhost:5173` | **MEDIUM** | Parameterize CORS allowed origins via environment variable `CORS_ALLOWED_ORIGINS`. |
-| **Secret Exposure** | Secrets in `.env.development` and defaults in `application.properties` | **MEDIUM** | Remove secrets from tracked files; enforce `.env.example` templates; use provider secret vaults. |
-| **Document Uploads** | No multipart document controller implemented | **HIGH** | Implement secure upload endpoint with file type (MIME), size (max 10MB), and extension validation. |
+| **Authentication** | Database-backed BCrypt users with HTTP Basic; no frontend login route | **HIGH** | Add a deliberate login/session or JWT contract and rotate the seeded development admin credential before deployment. |
+| **Authorization** | API authentication required; document downloads enforce owner/admin/manager checks | **HIGH** | Add role checks to financial and stock mutation endpoints and remove reliance on client identity headers. |
+| **CORS Configuration** | Explicit origins from `CORS_ALLOWED_ORIGINS`; wildcard is rejected | **MEDIUM** | Set only the exact deployed frontend origin in the provider environment. |
+| **Secret Exposure** | Application and Compose password fallbacks removed; smoke test credential removed | **MEDIUM** | Rotate any previously exposed credentials and keep provider secrets outside Git. |
+| **Document Uploads** | Multipart controller validates MIME, extension, size, ownership, and normalized paths | **HIGH** | Move permanent files to private object storage or persistent volume and add content signature scanning. |
 | **Database Transactions**| Standard `@Transactional` on services | **LOW** | Verified properly configured on `StockService`, `TransportBillService`, and `TransportPaymentService`. |
 
 ---
@@ -112,4 +112,4 @@ This audit assesses the technical maturity, security posture, automated testing 
 
 ## 5. Audit Conclusion
 
-The KTA ERP codebase exhibits high software engineering hygiene, strict relational domain modeling, and well-designed UI/UX flows. Prior to entering production, automated test suites (Phase 2), security hardening (Phase 3), and CI/CD pipelines (Phase 4/5) must be established.
+The KTA ERP has a useful modular foundation, but it is **Not Production Ready**. Blocking items are authentication UX/contract alignment, complete authorization coverage, passing lint and backend test execution, durable private document storage, OCR failure handling, and verification against real deployed URLs.

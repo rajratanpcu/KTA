@@ -19,7 +19,7 @@ psql -U postgres
 
 # Create database and user
 CREATE DATABASE kta_erp;
-CREATE USER kta WITH PASSWORD 'changeme';
+CREATE USER kta WITH PASSWORD '<set-a-local-development-password>';
 GRANT ALL PRIVILEGES ON DATABASE kta_erp TO kta;
 \q
 ```
@@ -43,10 +43,9 @@ java -jar target/kta-erp-1.0.0.jar
 
 The backend will start on `http://localhost:8080`
 
-### 4. Default Credentials
+### 4. Credentials
 
-- Username: `admin`
-- Password: `admin123`
+No default application credentials are provisioned. Create an approved BCrypt user through the administrative provisioning process before signing in, and never document or commit its password.
 
 ## Docker Setup
 
