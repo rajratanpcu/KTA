@@ -1,5 +1,5 @@
 # Render Infrastructure as Code Blueprint
-# Free-tier single-click deploy: PostgreSQL Database + Spring Boot API Service
+# Free-tier cloud deploy: PostgreSQL Database + Spring Boot API Service
 # Render automatically provisions and links the PostgreSQL database to the backend!
 
 databases:
@@ -13,9 +13,9 @@ services:
   # Backend API Web Service
   - type: web
     name: kta-erp-backend
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    runtime: java
+    buildCommand: cd backend && mvn clean package -DskipTests
+    startCommand: java -jar backend/target/kta-erp-1.0.0.jar
     plan: free
     region: oregon
     healthCheckPath: /actuator/health

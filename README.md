@@ -11,7 +11,7 @@
 A production-grade ERP system built for multi-godown wholesale and retail distribution enterprises, supporting real-time inventory balances, stock movements, transporter billing, and OCR-assisted bill processing.
 
 ## Live Deployment Links (1-Click)
-- **Render Backend + Managed PostgreSQL:** Click the **Deploy to Render** button above. It uses `render.yaml` to provision the managed PostgreSQL service, wire database credentials to the Spring Boot API container, run all Flyway migrations, and start the backend. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `CORS_ALLOWED_ORIGINS` as provider secrets before shared use.
+- **Render Backend + Managed PostgreSQL:** Click the **Deploy to Render** button above. It uses `render.yaml` to provision the managed PostgreSQL service, wire database credentials to the Spring Boot API, run all Flyway migrations, and start the backend. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `CORS_ALLOWED_ORIGINS` as environment variables before shared use.
 - **Vercel Frontend:** Click the **Deploy with Vercel** button above. It automatically clones the frontend, configures the Vite build, SPA routing, and security headers. Set `VITE_API_BASE_URL` to your Render backend URL.
 
 ---
@@ -20,25 +20,30 @@ A production-grade ERP system built for multi-godown wholesale and retail distri
 - **Frontend:** React 18, TypeScript 5, Vite, Tailwind CSS, shadcn/ui, TanStack Query v5, native fetch API client with error handling.
 - **Backend:** Java 17, Spring Boot 3.1.5, Spring Data JPA, Spring Security, Flyway DB Migrations, Jakarta Validation.
 - **Database:** PostgreSQL 15 with automated balance calculation triggers and `DECIMAL(15, 2)` financial and `DECIMAL(15, 3)` inventory precision.
-- **DevOps:** Multi-stage Dockerfiles, Docker Compose, GitHub Actions CI/CD (`.github/workflows/ci.yml`), Render Blueprint (`render.yaml`), Vercel SPA configuration (`frontend/vercel.json`).
+- **DevOps:** GitHub Actions CI/CD (`.github/workflows/ci.yml`), Render native Java buildpack (`render.yaml`), Vercel SPA configuration (`frontend/vercel.json`).
 
 ---
 
-## Local Development & Docker
+## Development
 
-### Option 1: One-Click Local Production Launch (Docker Compose)
-Double-click `start_local_production.bat` or run:
-```bash
-docker-compose up --build -d
-```
-- Frontend UI: `http://localhost:5173`
-- Backend API: `http://localhost:8080/api`
-- Health Endpoint: `http://localhost:8080/actuator/health`
-
-### Option 2: Push Changes to GitHub
+### Push Changes to GitHub
 Double-click `push_to_github.bat` or run:
 ```bash
 git push -u origin main
+```
+
+### Backend Development
+```bash
+cd backend
+mvn clean package
+java -jar target/kta-erp-1.0.0.jar
+```
+
+### Frontend Development
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
