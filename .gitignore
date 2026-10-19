@@ -1,0 +1,41 @@
+# Environment and local secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Build outputs
+target/
+dist/
+build/
+node_modules/
+.npm-global/
+
+# IDE and Editor
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.DS_Store
+Thumbs.db
+
+# Uploaded documents and storage
+uploads/
+kta-uploads/
+/tmp/kta-uploads/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Database & Docker volumes
+postgres_data/
+*.dump
+*.sql.gz

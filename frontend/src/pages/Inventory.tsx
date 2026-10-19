@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Package, TrendingUp, TrendingDown } from 'lucide-react'
+import { Search, Package, TrendingUp } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import {
@@ -12,34 +12,100 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { useStockBalances, useStockMovements } from '@/hooks/use-stock-queries'
+import { useGodowns } from '@/hooks/use-core-queries'
 import { demoStockBalances, demoStockMovements } from '@/data/demoData'
+
+interface BalanceRow {
+  sku: string
+  productName: string
+  godownName: string
+  godownId: string | number
+  availableQuantity: number
+  reservedQuantity: number
+  inTransitQuantity: number
+  unit: string
+}
+
+interface MovementRow {
+  id: string | number
+  performedAt: string
+  movementType: string
+  productName: string
+  sku: string
+  quantity: number
+  unit: string
+  sourceGodownName?: string
+  destinationGodownName?: string
+  referenceId?: string
+  performedBy: string
+}
 
 export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [godownFilter, setGodownFilter] = useState('all')
   const [viewMode, setViewMode] = useState<'balances' | 'movements'>('balances')
 
-  const filteredBalances = demoStockBalances.filter((balance) => {
+  const { data: apiBalances, isLoading: balancesLoading } = useStockBalances()
+  const { data: apiMovements, isLoading: movementsLoading } = useStockMovements()
+  const { data: apiGodowns } = useGodowns()
+
+  const balances: BalanceRow[] = apiBalances
+    ? apiBalances.map((b) => ({
+        sku: b.productSku,
+        productName: b.productName,
+        godownName: b.godownName,
+        godownId: b.godownId,
+        availableQuantity: b.availableQuantity,
+        reservedQuantity: b.reservedQuantity,
+        inTransitQuantity: b.inTransitQuantity,
+        unit: b.unit,
+      }))
+    : demoStockBalances
+
+  const movements: MovementRow[] = apiMovements
+    ? apiMovements.map((m) => ({
+        id: m.id,
+        performedAt: m.movementDate,
+        movementType: m.movementType,
+        productName: m.productName,
+        sku: m.productSku,
+        quantity: m.quantity,
+        unit: m.unit,
+        sourceGodownName: m.direction === 'OUT' ? m.godownName : undefined,
+        destinationGodownName: m.direction === 'IN' ? m.godownName : undefined,
+        referenceId: m.referenceNumber || m.movementNumber,
+        performedBy: m.createdByName,
+      }))
+    : demoStockMovements
+
+  const filteredBalances = balances.filter((balance) => {
     const matchesSearch =
       balance.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       balance.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesGodown = godownFilter === 'all' || balance.godownId === godownFilter
+    const matchesGodown = godownFilter === 'all' || String(balance.godownId) === godownFilter
     return matchesSearch && matchesGodown
   })
 
-  const filteredMovements = demoStockMovements.filter((movement) => {
-    const matchesSearch =
+  const filteredMovements = movements.filter((movement) => {
+    return (
       movement.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       movement.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch
+    )
   })
 
-  const totalStockValue = filteredBalances.reduce(
-    (sum, b) => sum + b.availableQuantity * 100,
-    0
-  )
+  const totalStockValue = filteredBalances.reduce((sum, b) => sum + b.availableQuantity * 100, 0)
   const totalItems = filteredBalances.length
-  const totalQuantity = filteredBalances.reduce((sum, b) => sum + b.availableQuantity, 0)
+  const totalInTransit = filteredBalances.reduce((sum, b) => sum + b.inTransitQuantity, 0)
+
+  if (viewMode === 'balances' && balancesLoading) {
+    return <LoadingSpinner message="Loading stock balances..." />
+  }
+
+  if (viewMode === 'movements' && movementsLoading) {
+    return <LoadingSpinner message="Loading stock movements..." />
+  }
 
   return (
     <div className="space-y-6">
@@ -47,7 +113,14 @@ export default function Inventory() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
-          <p className="text-muted-foreground mt-1">Track stock levels across all locations</p>
+          <p className="text-muted-foreground mt-1">
+            Track stock levels across all locations
+            {!apiBalances && (
+              <span className="ml-2 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                Demo Data
+              </span>
+            )}
+          </p>
         </div>
       </div>
 
@@ -87,7 +160,7 @@ export default function Inventory() {
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">350</div>
+            <div className="text-2xl font-bold">{totalInTransit}</div>
             <p className="text-xs text-muted-foreground mt-1">Units being transferred</p>
           </CardContent>
         </Card>
@@ -109,10 +182,22 @@ export default function Inventory() {
             {viewMode === 'balances' && (
               <Select value={godownFilter} onChange={(e) => setGodownFilter(e.target.value)}>
                 <option value="all">All Godowns</option>
-                <option value="1">Mumbai Central Warehouse</option>
-                <option value="2">Delhi North Warehouse</option>
-                <option value="3">Bangalore Tech Park</option>
-                <option value="4">Chennai Port Warehouse</option>
+                {apiGodowns
+                  ? apiGodowns.map((g) => (
+                      <option key={g.id} value={String(g.id)}>
+                        {g.name}
+                      </option>
+                    ))
+                  : [
+                      { id: '1', name: 'Mumbai Central Warehouse' },
+                      { id: '2', name: 'Delhi North Warehouse' },
+                      { id: '3', name: 'Bangalore Tech Park' },
+                      { id: '4', name: 'Chennai Port Warehouse' },
+                    ].map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
               </Select>
             )}
             <div className="flex gap-2">
@@ -237,9 +322,13 @@ export default function Inventory() {
                       <TableCell>
                         <Badge
                           variant={
-                            movement.movementType === 'PURCHASE_RECEIPT'
+                            movement.movementType === 'PURCHASE_RECEIPT' ||
+                            movement.movementType === 'PURCHASE_IN' ||
+                            movement.movementType === 'TRANSFER_IN'
                               ? 'success'
-                              : movement.movementType === 'SALE'
+                              : movement.movementType === 'SALE' ||
+                                movement.movementType === 'SALES_OUT' ||
+                                movement.movementType === 'DAMAGE'
                               ? 'destructive'
                               : 'default'
                           }
@@ -256,7 +345,9 @@ export default function Inventory() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        {movement.movementType.includes('OUT') || movement.movementType === 'SALE' ? (
+                        {movement.movementType.includes('OUT') ||
+                        movement.movementType === 'SALE' ||
+                        movement.movementType === 'DAMAGE' ? (
                           <span className="text-red-600">-{movement.quantity}</span>
                         ) : (
                           <span className="text-green-600">+{movement.quantity}</span>
