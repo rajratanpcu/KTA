@@ -1,238 +1,52 @@
-# KTA ERP - Complete Setup Guide
+# Deploy to Render & Vercel
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/rajratanpcu/KTA)
 
-## Project Structure
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frajratanpcu%2FKTA&root-directory=frontend)
 
-```
-KTA/
-├── frontend/              # React + TypeScript + Vite
-│   ├── src/
-│   │   ├── components/   # Reusable UI components
-│   │   ├── pages/        # Main application pages
-│   │   ├── types/        # TypeScript interfaces
-│   │   └── data/         # Demo data (to be replaced with API calls)
-│   └── package.json
-├── backend/              # Spring Boot + PostgreSQL
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/kta/erp/
-│   │   │   │   ├── controller/    # REST controllers
-│   │   │   │   ├── service/       # Business logic
-│   │   │   │   ├── repository/    # Data access
-│   │   │   │   ├── entity/        # JPA entities
-│   │   │   │   ├── dto/           # Request/Response DTOs
-│   │   │   │   └── config/        # Configuration
-│   │   │   └── resources/
-│   │   │       └── db/migration/  # Flyway SQL migrations
-│   └── pom.xml
-└── docker-compose.yml    # Docker orchestration
+---
 
-```
+# KTA ERP - Enterprise Distribution System
+**Retail & Wholesale Distribution Management Platform**
 
-## Quick Start
+A production-grade ERP system built for multi-godown wholesale and retail distribution enterprises, supporting real-time inventory balances, stock movements, transporter billing, and OCR-assisted bill processing.
 
-### Option 1: Docker (Recommended)
+## Live Deployment Links (1-Click)
+- **Render Backend + Managed PostgreSQL:** Click the **Deploy to Render** button above. It uses `render.yaml` to automatically provision a free PostgreSQL 15 database, wire the database credentials directly to the Spring Boot 3 API container, run all Flyway migrations (V1, V2, V3), and spin up the live backend with zero manual configuration.
+- **Vercel Frontend:** Click the **Deploy with Vercel** button above. It automatically clones the frontend, configures the Vite build, SPA routing, and security headers. Set `VITE_API_BASE_URL` to your Render backend URL.
 
+---
+
+## Technical Stack
+- **Frontend:** React 18, TypeScript 5, Vite, Tailwind CSS, shadcn/ui, TanStack Query v5, native fetch API client with error handling.
+- **Backend:** Java 17, Spring Boot 3.1.5, Spring Data JPA, Spring Security, Flyway DB Migrations, Jakarta Validation.
+- **Database:** PostgreSQL 15 with automated balance calculation triggers and `DECIMAL(15, 2)` financial and `DECIMAL(15, 3)` inventory precision.
+- **DevOps:** Multi-stage Dockerfiles, Docker Compose, GitHub Actions CI/CD (`.github/workflows/ci.yml`), Render Blueprint (`render.yaml`), Vercel SPA configuration (`frontend/vercel.json`).
+
+---
+
+## Local Development & Docker
+
+### Option 1: One-Click Local Production Launch (Docker Compose)
+Double-click `start_local_production.bat` or run:
 ```bash
-# From project root
-docker-compose up -d
-
-# Wait for services to start (1-2 minutes)
-# Frontend: http://localhost:5173
-# Backend:  http://localhost:8080
+docker-compose up --build -d
 ```
+- Frontend UI: `http://localhost:5173`
+- Backend API: `http://localhost:8080/api`
+- Health Endpoint: `http://localhost:8080/actuator/health`
 
-### Option 2: Local Development
-
-**Terminal 1 - Database:**
+### Option 2: Push Changes to GitHub
+Double-click `push_to_github.bat` or run:
 ```bash
-# Start PostgreSQL (if not using Docker)
-# Create database 'kta_erp' with user 'kta'
+git push -u origin main
 ```
 
-**Terminal 2 - Backend:**
-```bash
-cd backend
-mvn clean install
-mvn spring-boot:run
-```
+---
 
-**Terminal 3 - Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## What's Implemented
-
-### Phase 1: UI Prototype ✅
-- 13 screens with complete UI
-- Product management with CRUD operations
-- Inventory tracking with dual view
-- Transport bills with scan interface
-- Godowns with stock details
-- Dashboard with charts and metrics
-
-### Phase 2: Backend Foundation ✅
-- Spring Boot 3.1.5 application
-- PostgreSQL database with Flyway migrations
-- JPA entities for all core modules
-- REST APIs for:
-  - Products, Categories, Units
-  - Godowns (warehouses)
-  - Transporters
-  - Transport Bills with items
-  - Transport Payments with allocations
-- Input validation and error handling
-- Docker setup for all services
-
-### Database Schema
-
-**Core Tables:**
-- `users` - User accounts with roles
-- `categories` - Product categories
-- `units` - Units of measurement
-- `products` - Product catalog
-- `godowns` - Warehouse locations
-- `suppliers` - Supplier master
-- `customers` - Customer master
-
-**Transport Bills Tables:**
-- `transporters` - Transporter companies
-- `scanned_documents` - Uploaded bill images
-- `transport_bills` - Bill header with financial details
-- `transport_bill_items` - Line items with product details
-- `transport_payments` - Payment records
-- `transport_payment_allocations` - Payment to bill mapping
-- `transport_bill_audit` - Audit trail
-
-## API Documentation
-
-See [BACKEND_SETUP.md](backend/BACKEND_SETUP.md) for detailed API documentation.
-
-### Key Endpoints
-
-```
-GET    /api/products                    # All products
-POST   /api/products                    # Create product
-GET    /api/products/search?query=rice  # Search products
-
-GET    /api/godowns                     # All warehouses
-POST   /api/godowns                     # Create warehouse
-
-GET    /api/transport/transporters      # All transporters
-POST   /api/transport/transporters      # Create transporter
-
-GET    /api/transport/bills             # All transport bills
-POST   /api/transport/bills             # Create bill
-GET    /api/transport/bills/needs-review # Bills needing review
-GET    /api/transport/bills/overdue     # Overdue bills
-
-POST   /api/transport/payments          # Record payment
-```
-
-## Next Steps (Phase 3)
-
-1. **Frontend-Backend Integration**
-   - Replace demo data with API calls
-   - Implement API service layer in frontend
-   - Add authentication state management
-   - Handle loading and error states
-
-2. **File Upload & OCR**
-   - Add file upload endpoint for scanned bills
-   - Integrate OCR library (Tesseract/Cloud Vision)
-   - Implement AI extraction for bill fields
-   - Create review interface for extracted data
-
-3. **Stock Management**
-   - Stock balance tracking
-   - Stock movements (IN/OUT/TRANSFER)
-   - Opening balances
-   - Stock adjustments
-
-4. **Purchase & Sales**
-   - Purchase orders and GRN
-   - Sales orders and invoices
-   - POS interface
-   - Payment tracking
-
-## Configuration
-
-### Backend Configuration
-Edit `backend/src/main/resources/application.properties`:
-```properties
-server.port=8080
-spring.datasource.url=jdbc:postgresql://localhost:5432/kta_erp
-spring.datasource.username=kta
-spring.datasource.password=changeme
-```
-
-### Frontend Configuration
-Edit `frontend/.env`:
-```
-VITE_API_BASE_URL=http://localhost:8080
-```
-
-### Docker Configuration
-Edit `docker-compose.yml` to change ports, passwords, or resource limits.
-
-## Default Credentials
-
-**Admin User:**
-- Username: `admin`
-- Password: `admin123`
-
-**Database:**
-- Database: `kta_erp`
-- User: `kta`
-- Password: `changeme`
-
-## Technology Stack
-
-**Frontend:**
-- React 18 + TypeScript
-- Vite (build tool)
-- Tailwind CSS + shadcn/ui
-- React Router v6
-- React Query (for API state)
-- Recharts (for charts)
-
-**Backend:**
-- Spring Boot 3.1.5
-- Spring Data JPA
-- Spring Security
-- PostgreSQL 15
-- Flyway (migrations)
-- Lombok
-- Jakarta Validation
-
-**DevOps:**
-- Docker & Docker Compose
-- Maven (backend build)
-- npm (frontend build)
-
-## Development Tips
-
-1. **Hot Reload**: Both frontend and backend support hot reload during development
-2. **Database Changes**: Add new migrations as `V3__description.sql`, never modify existing ones
-3. **API Testing**: Use tools like Postman or curl to test endpoints
-4. **Logs**: Check `docker-compose logs -f backend` for backend errors
-5. **Reset Database**: `docker-compose down -v` removes all data
-
-## Troubleshooting
-
-See [BACKEND_SETUP.md](backend/BACKEND_SETUP.md) for detailed troubleshooting guide.
-
-**Common Issues:**
-- Port conflicts: Change ports in docker-compose.yml
-- Database connection: Check PostgreSQL is running
-- Build failures: Clear Maven cache: `mvn clean`
-- Frontend errors: Delete node_modules and reinstall
-
-## Support
-
-For issues or questions:
-1. Check the logs: `docker-compose logs -f [service-name]`
-2. Verify all services are running: `docker-compose ps`
-3. Review the setup guides in backend/ and frontend/ directories
+## Documentation Index
+- [Production Architecture & Readiness Audit](docs/PRODUCTION_AUDIT.md)
+- [Automated Testing Report](docs/TEST_REPORT.md)
+- [Production Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
+- [Environment Variables Reference](docs/ENVIRONMENT_VARIABLES.md)
+- [Database Backup & Recovery Runbook](docs/BACKUP_AND_RECOVERY.md)
+- [Transport Bills Module Specification](docs/TRANSPORT_BILLS_MODULE.md)

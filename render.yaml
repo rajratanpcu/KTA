@@ -1,5 +1,16 @@
+# Render Infrastructure as Code Blueprint
+# Free-tier single-click deploy: PostgreSQL Database + Spring Boot API Service
+# Render automatically provisions and links the PostgreSQL database to the backend!
+
+databases:
+  - name: kta-erp-postgres
+    plan: free
+    region: oregon
+    databaseName: kta_erp
+    user: kta_admin
+
 services:
-  # Backend API Service
+  # Backend API Web Service
   - type: web
     name: kta-erp-backend
     runtime: docker
@@ -14,12 +25,24 @@ services:
       - key: PORT
         value: 8080
       - key: SPRING_DATASOURCE_URL
-        sync: false # Set in Render Dashboard (e.g. from Neon / Supabase)
+        fromDatabase:
+          name: kta-erp-postgres
+          property: connectionString
       - key: SPRING_DATASOURCE_USERNAME
-        sync: false
+        fromDatabase:
+          name: kta-erp-postgres
+          property: user
       - key: SPRING_DATASOURCE_PASSWORD
-        sync: false
+        fromDatabase:
+          name: kta-erp-postgres
+          property: password
+      - key: DB_MAX_POOL_SIZE
+        value: "5"
+      - key: DB_MIN_IDLE
+        value: "2"
       - key: CORS_ALLOWED_ORIGINS
-        sync: false # Set to your deployed Vercel frontend domain
+        value: "*"
       - key: UPLOAD_DIR
         value: /tmp/kta-uploads
+      - key: ADMIN_PASSWORD
+        generateValue: true
