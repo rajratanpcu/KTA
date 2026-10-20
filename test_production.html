@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KTA ERP — Production Links Live Test Runner</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    h1 { font-size: 22px; font-weight: 700; color: #fff; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .badge-bar { display: flex; gap: 10px; }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .config-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    input {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+    .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text); }
+    button.secondary:hover { background: #334155; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-val { font-size: 28px; font-weight: 700; font-family: var(--mono); }
+    .stat-val.passed { color: var(--success); }
+    .stat-val.failed { color: var(--error); }
+    .stat-val.pending { color: var(--muted); }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 13px;
+    }
+    th {
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    tr:last-child td { border-bottom: none; }
+    .status-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--mono);
+    }
+    .pill-pass { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-fail { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .pill-running { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .pill-pending { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .mono { font-family: var(--mono); }
+    .log-box {
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .alert {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .alert-warn {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>KTA ERP — Production Testing Console</h1>
+        <p class="subtitle">Verifying Live Frontend (Vercel) &amp; Live Backend (Render) with Real Browser Fetch</p>
+      </div>
+      <div class="badge-bar">
+        <span class="badge">Vercel: frontend-liard-delta-44</span>
+        <span class="badge">Render: kta-erp-backend-d7xj</span>
+      </div>
+    </header>
+
+    <div class="alert alert-warn">
+      <div>
+        <strong>Render Free Tier Note:</strong> If the backend has been idle for &gt;15 minutes, the first request will take <strong>50–90 seconds</strong> to spin up from cold storage. The test runner uses an extended 90s timeout for the health check.
+      </div>
+    </div>
+
+    <div class="config-card">
+      <div class="field">
+        <label>Backend Base URL</label>
+        <input id="backendUrl" value="https://kta-erp-backend-d7xj.onrender.com" />
+      </div>
+      <div class="field">
+        <label>Frontend URL</label>
+        <input id="frontendUrl" value="https://frontend-liard-delta-44.vercel.app" />
+      </div>
+      <div class="field">
+        <label>Admin Username</label>
+        <input id="adminUser" value="admin" />
+      </div>
+      <div class="field">
+        <label>Admin Password</label>
+        <input id="adminPass" type="password" value="AdminPassword123!" />
+      </div>
+      <div class="actions">
+        <button id="runBtn" onclick="runAllTests()">Run All Production Tests</button>
+        <button class="secondary" onclick="clearLogs()">Clear Logs</button>
+        <button class="secondary" onclick="window.open(document.getElementById('frontendUrl').value, '_blank')">Open Frontend</button>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div id="statTotal" class="stat-val pending">10</div>
+        <div class="stat-label">Total Tests</div>
+      </div>
+      <div class="stat-card">
+        <div id="statPassed" class="stat-val passed">0</div>
+        <div class="stat-label">Passed</div>
+      </div>
+      <div class="stat-card">
+        <div id="statFailed" class="stat-val failed">0</div>
+        <div class="stat-label">Failed</div>
+      </div>
+      <div class="stat-card">
+        <div id="statLatency" class="stat-val pending">--</div>
+        <div class="stat-label">Avg Latency</div>
+      </div>
+    </div>
+
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Test Name</th>
+          <th>Endpoint / Target</th>
+          <th>Expected</th>
+          <th>Status</th>
+          <th>Latency</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody id="testTableBody">
+        <!-- Dynamically generated rows -->
+      </tbody>
+    </table>
+
+    <div class="log-box" id="logBox">Ready. Click "Run All Production Tests" to start testing live endpoints.</div>
+  </div>
+
+  <script>
+    const tests = [
+      { id: 't1', name: '1. Backend Health Check', path: '/actuator/health', auth: false, expected: '200 OK & status:UP', timeout: 95000 },
+      { id: 't2', name: '2. CORS Preflight & Credentials', path: '/api/categories', method: 'OPTIONS', auth: false, expected: 'CORS Headers Allowed', timeout: 15000 },
+      { id: 't3', name: '3. Admin Auth (/api/categories)', path: '/api/categories', auth: true, expected: '200 OK (Category list)', timeout: 20000 },
+      { id: 't4', name: '4. Products API', path: '/api/products', auth: true, expected: '200 OK (Product list)', timeout: 20000 },
+      { id: 't5', name: '5. Godowns API (6 Warehouses)', path: '/api/godowns', auth: true, expected: '200 OK (Godown list)', timeout: 20000 },
+      { id: 't6', name: '6. Stock Balances API', path: '/api/stock/balances', auth: true, expected: '200 OK (Stock balances)', timeout: 20000 },
+      { id: 't7', name: '7. Customers API', path: '/api/customers', auth: true, expected: '200 OK (Customer list)', timeout: 20000 },
+      { id: 't8', name: '8. Suppliers API', path: '/api/suppliers', auth: true, expected: '200 OK (Supplier list)', timeout: 20000 },
+      { id: 't9', name: '9. Transporters API', path: '/api/transport/transporters', auth: true, expected: '200 OK (Transporter list)', timeout: 20000 },
+      { id: 't10', name: '10. Vercel Frontend SPA Reachability', isFrontend: true, path: '/', expected: '200 OK (HTML Document)', timeout: 20000 }
+    ];
+
+    function log(msg) {
+      const box = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString();
+      box.textContent += `[${time}] ${msg}\n`;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('logBox').textContent = '';
+    }
+
+    function initTable() {
+      const tbody = document.getElementById('testTableBody');
+      tbody.innerHTML = '';
+      tests.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.id = `row-${t.id}`;
+        tr.innerHTML = `
+          <td><strong>${t.name}</strong></td>
+          <td class="mono">${t.path}</td>
+          <td>${t.expected}</td>
+          <td><span class="status-pill pill-pending" id="status-${t.id}">PENDING</span></td>
+          <td class="mono" id="lat-${t.id}">--</td>
+          <td id="detail-${t.id}" style="color: var(--muted); font-size: 12px;">Waiting to run</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    initTable();
+
+    async function runAllTests() {
+      const runBtn = document.getElementById('runBtn');
+      runBtn.disabled = true;
+      initTable();
+      clearLogs();
+
+      const backendUrl = document.getElementById('backendUrl').value.replace(/\/+$/, '');
+      const frontendUrl = document.getElementById('frontendUrl').value.replace(/\/+$/, '');
+      const user = document.getElementById('adminUser').value;
+      const pass = document.getElementById('adminPass').value;
+      const authHeader = 'Basic ' + btoa(`${user}:${pass}`);
+
+      let passed = 0;
+      let failed = 0;
+      let totalLatency = 0;
+      let latencyCount = 0;
+
+      log(`Starting production suite testing...`);
+      log(`Backend: ${backendUrl}`);
+      log(`Frontend: ${frontendUrl}`);
+
+      for (const t of tests) {
+        const statusEl = document.getElementById(`status-${t.id}`);
+        const latEl = document.getElementById(`lat-${t.id}`);
+        const detailEl = document.getElementById(`detail-${t.id}`);
+
+        statusEl.className = 'status-pill pill-running';
+        statusEl.textContent = 'RUNNING';
+        log(`Running: ${t.name}...`);
+
+        const start = performance.now();
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), t.timeout);
+
+        try {
+          const targetUrl = t.isFrontend ? `${frontendUrl}${t.path}` : `${backendUrl}${t.path}`;
+          const headers = {};
+          if (t.auth) headers['Authorization'] = authHeader;
+          headers['Accept'] = 'application/json, text/html, */*';
+
+          const res = await fetch(targetUrl, {
+            method: t.method || 'GET',
+            headers,
+            signal: controller.signal
+          });
+
+          clearTimeout(timer);
+          const elapsed = Math.round(performance.now() - start);
+          totalLatency += elapsed;
+          latencyCount++;
+          latEl.textContent = `${elapsed}ms`;
+
+          let bodySnippet = '';
+          try {
+            const text = await res.text();
+            bodySnippet = text.slice(0, 120);
+          } catch (e) {}
+
+          if (res.ok || (t.method === 'OPTIONS' && res.status < 400)) {
+            passed++;
+            statusEl.className = 'status-pill pill-pass';
+            statusEl.textContent = 'PASS';
+            detailEl.textContent = `HTTP ${res.status} — ${bodySnippet || 'OK'}`;
+            log(`✓ ${t.name} passed (${elapsed}ms) [HTTP ${res.status}]`);
+          } else {
+            failed++;
+            statusEl.className = 'status-pill pill-fail';
+            statusEl.textContent = 'FAIL';
+            detailEl.textContent = `HTTP ${res.status} — ${bodySnippet || res.statusText}`;
+            log(`✗ ${t.name} failed with status HTTP ${res.status}: ${bodySnippet}`);
+          }
+        } catch (err) {
+          clearTimeout(timer);
+          const elapsed = Math.round(performance.now() - start);
+          failed++;
+          statusEl.className = 'status-pill pill-fail';
+          statusEl.textContent = 'FAIL';
+          const errMsg = err.name === 'AbortError' ? `Timeout after ${t.timeout / 1000}s (Cold start?)` : err.message;
+          detailEl.textContent = errMsg;
+          log(`✗ ${t.name} exception: ${errMsg}`);
+        }
+
+        document.getElementById('statPassed').textContent = passed;
+        document.getElementById('statFailed').textContent = failed;
+        if (latencyCount > 0) {
+          document.getElementById('statLatency').textContent = `${Math.round(totalLatency / latencyCount)}ms`;
+        }
+      }
+
+      runBtn.disabled = false;
+      log(`========================================`);
+      log(`Suite completed: ${passed} Passed, ${failed} Failed`);
+      log(`========================================`);
+    }
+  </script>
+</body>
+</html>
