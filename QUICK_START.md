@@ -1,92 +1,109 @@
-# Quick Start Guide - Step by Step
+# 🚀 KTA ERP - Quick Start Guide
 
-## The Issue
-You're seeing "ERR_CONNECTION_REFUSED" because the development server hasn't been started yet.
+**Created:** 2026-10-19
 
-## Step-by-Step Solution
+## One-Command Startup
 
-### Step 1: Open Command Prompt (or PowerShell)
+Double-click: **`START_PROJECT.bat`**
 
-Press `Windows Key + R`, type `cmd`, and press Enter
+This will automatically:
+1. Start the backend server (port 8080)
+2. Start the frontend server (port 5173)
+3. Open both in separate windows
 
-### Step 2: Navigate to the Frontend Folder
+---
 
+## First Time Setup (Run Once)
+
+### Step 1: Check Prerequisites
+Double-click: **`check_prerequisites.bat`**
+
+This verifies you have:
+- ✓ Java 17
+- ✓ Maven 3.8+
+- ✓ Node.js 18+
+- ✓ PostgreSQL 15
+
+### Step 2: Setup Database
+Double-click: **`setup_database.bat`**
+
+Creates:
+- Database: `kta_erp_local`
+- User: `kta_admin`
+- Password: `kta_local_password`
+
+---
+
+## Manual Startup (If Needed)
+
+If the automated startup doesn't work, run these in order:
+
+1. **Start Backend** - Double-click: `start_backend.bat`
+   - Wait for: "Started KtaErpApplication in X seconds"
+   
+2. **Start Frontend** - Double-click: `start_frontend.bat`
+   - Opens at: http://localhost:5173
+
+---
+
+## Access the Application
+
+**URL:** http://localhost:5173/login
+
+**Login:**
+- Username: `admin`
+- Password: `AdminPassword123!`
+
+---
+
+## Configuration Files Created
+
+✓ `frontend/.env.local` - Frontend API configuration
+✓ `backend/src/main/resources/application-local.properties` - Backend database config
+
+---
+
+## Troubleshooting
+
+### Port Already in Use
+If port 8080 or 5173 is taken:
+- Close the application using that port
+- Or restart your computer
+
+### Database Connection Error
+Run: `setup_database.bat` again
+
+### Build Errors
 ```bash
-cd C:\Users\Raj Ratan\Desktop\KTA\frontend
+cd backend
+mvn clean install -DskipTests
 ```
 
-### Step 3: Install Dependencies (First Time Only)
-
+### Frontend Errors
 ```bash
+cd frontend
+rm -rf node_modules package-lock.json
 npm install
 ```
 
-**This will take 2-3 minutes.** You should see progress as packages download.
+---
 
-**Expected output:**
+## Architecture
+
 ```
-added 234 packages, and audited 235 packages in 45s
-```
-
-**If npm install fails**, please tell me the exact error message.
-
-### Step 4: Start the Development Server
-
-```bash
-npm run dev
+Frontend (React + Vite)     Backend (Spring Boot)     Database (PostgreSQL)
+http://localhost:5173  -->  http://localhost:8080 --> localhost:5432
 ```
 
-**Expected output:**
-```
-  VITE v5.2.11  ready in 823 ms
+---
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-  ➜  press h + enter to show help
-```
+## Next Steps After Running
 
-### Step 5: Open in Browser
+1. Explore the dashboard
+2. Create test data
+3. Make code changes
+4. Push to GitHub: `git push origin main`
 
-Open your browser and go to: **http://localhost:5173**
+---
 
-The KTA ERP application should now load!
-
-## Important Notes
-
-⚠️ **Keep the Command Prompt window open** - The server runs in that window. Closing it stops the server.
-
-⚠️ **Don't have Node.js?** First install it from: https://nodejs.org/en/download/ (download the LTS version)
-
-## Quick Checklist
-
-- [ ] Node.js installed (run `node --version` to check)
-- [ ] Navigated to frontend folder
-- [ ] Ran `npm install` successfully
-- [ ] Ran `npm run dev` successfully
-- [ ] Command prompt shows "ready" message
-- [ ] Opened http://localhost:5173 in browser
-
-## If It Still Doesn't Work
-
-### Check if Node.js is installed:
-```bash
-node --version
-npm --version
-```
-
-If you get "command not found", install Node.js first.
-
-### Try a different port (if 5173 is busy):
-```bash
-npm run dev -- --port 3000
-```
-Then open: http://localhost:3000
-
-### Still stuck?
-
-Tell me:
-1. What happens when you run `npm install`?
-2. What happens when you run `npm run dev`?
-3. Any error messages?
-
-I'll help you fix it!
+**Need Help?** Check [LOCAL_DEVELOPMENT_GUIDE.md](LOCAL_DEVELOPMENT_GUIDE.md)
