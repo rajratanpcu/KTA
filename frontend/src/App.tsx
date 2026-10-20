@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
@@ -15,6 +16,8 @@ import Reports from './pages/Reports'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+import { ChatbotButton } from './components/chat/ChatbotButton'
+import { ChatbotPanel } from './components/chat/ChatbotPanel'
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const isAuthenticated = Boolean(
@@ -25,27 +28,33 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 }
 
 function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false)
+
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="products" element={<Products />} />
-        <Route path="inventory" element={<Inventory />} />
-        <Route path="godowns" element={<Godowns />} />
-        <Route path="transfers" element={<Transfers />} />
-        <Route path="purchasing" element={<Purchasing />} />
-        <Route path="sales" element={<Sales />} />
-        <Route path="transport" element={<Transport />} />
-        <Route path="transport-bills" element={<TransportBills />} />
-        <Route path="customers" element={<Customers />} />
-        <Route path="suppliers" element={<Suppliers />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="expenses" element={<Expenses />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="products" element={<Products />} />
+          <Route path="inventory" element={<Inventory />} />
+          <Route path="godowns" element={<Godowns />} />
+          <Route path="transfers" element={<Transfers />} />
+          <Route path="purchasing" element={<Purchasing />} />
+          <Route path="sales" element={<Sales />} />
+          <Route path="transport" element={<Transport />} />
+          <Route path="transport-bills" element={<TransportBills />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="suppliers" element={<Suppliers />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="expenses" element={<Expenses />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Routes>
+      <ChatbotPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <ChatbotButton isOpen={isChatOpen} onClick={() => setIsChatOpen((prev) => !prev)} />
+    </>
   )
 }
 
