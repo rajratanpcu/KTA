@@ -12,4 +12,6 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     Optional<Unit> findByName(String name);
 
     Optional<Unit> findByAbbreviation(String abbreviation);
+
+    Optional<Unit> findFirstByAbbreviationIgnoreCase(String abbreviation);
 }

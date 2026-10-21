@@ -15,6 +15,7 @@ import Suppliers from './pages/Suppliers'
 import Reports from './pages/Reports'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
+import ExcelImport from './pages/ExcelImport'
 import Login from './pages/Login'
 import { ChatbotButton } from './components/chat/ChatbotButton'
 import { ChatbotPanel } from './components/chat/ChatbotPanel'
@@ -49,6 +50,7 @@ function App() {
           <Route path="suppliers" element={<Suppliers />} />
           <Route path="reports" element={<Reports />} />
           <Route path="expenses" element={<Expenses />} />
+          <Route path="import-excel" element={<ExcelImport />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

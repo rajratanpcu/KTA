@@ -13,6 +13,7 @@ import {
   Building2,
   FileText,
   Receipt,
+  FileSpreadsheet,
   Settings,
   Bell,
   User,
@@ -36,6 +37,7 @@ const navigation = [
   { name: 'Suppliers', href: '/suppliers', icon: Building2 },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Expenses', href: '/expenses', icon: Receipt },
+  { name: 'Excel Import', href: '/import-excel', icon: FileSpreadsheet },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 

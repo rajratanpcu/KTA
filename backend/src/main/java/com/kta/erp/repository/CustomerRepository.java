@@ -12,6 +12,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByCode(String code);
 
+    Optional<Customer> findFirstByNameIgnoreCase(String name);
+
     List<Customer> findByActiveTrue();
 
     boolean existsByCode(String code);

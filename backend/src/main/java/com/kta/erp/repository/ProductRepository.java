@@ -14,6 +14,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findBySku(String sku);
 
+    Optional<Product> findFirstByNameIgnoreCase(String name);
+
     Optional<Product> findByBarcode(String barcode);
 
     List<Product> findByActiveTrue();
