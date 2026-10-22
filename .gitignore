@@ -3,6 +3,9 @@
 .env.local
 .env.*.local
 *.env
+RENDER_ENVIRONMENT_VARIABLES.md
+*SECRET*
+*CREDENTIAL*
 
 # Build outputs
 target/
