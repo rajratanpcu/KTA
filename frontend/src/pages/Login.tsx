@@ -19,6 +19,15 @@ export default function Login() {
     event.preventDefault()
     setError('')
     setIsSubmitting(true)
+
+    // Demo mode: accept any credentials
+    if (username && password) {
+      sessionStorage.setItem(USERNAME_KEY, username)
+      sessionStorage.setItem(PASSWORD_KEY, password)
+      navigate('/dashboard', { replace: true })
+      return
+    }
+
     sessionStorage.setItem(USERNAME_KEY, username)
     sessionStorage.setItem(PASSWORD_KEY, password)
 
